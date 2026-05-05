@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "ServeLink App",
+    "slug": "servelink-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.anonymous.servelinkapp",
+      "newArchEnabled": true
+    },
+    "ios": {
+      "supportsTablet": true,
+      "newArchEnabled": true
+    }
+  }
+}
