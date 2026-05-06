@@ -72,6 +72,21 @@ const globalStyles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
   },
+  outlineButton: {
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+  },
+  outlineButtonText: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 16,
+  },
   iconButton: {
     width: 44,
     height: 44,

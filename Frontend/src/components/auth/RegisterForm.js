@@ -29,7 +29,7 @@ const RegisterForm = ({ onSubmit, loading = false, serverError = '' }) => {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim]);
 
   const submit = async () => {
     const values = { name, email, phone, password, role };
@@ -43,7 +43,7 @@ const RegisterForm = ({ onSubmit, loading = false, serverError = '' }) => {
     try {
       await onSubmit(values);
     } catch (err) {
-      // Error handled by parent via serverError prop
+      // Parent handles server errors through serverError prop.
     }
   };
 
@@ -55,7 +55,7 @@ const RegisterForm = ({ onSubmit, loading = false, serverError = '' }) => {
       <Input label="Password" onChangeText={setPassword} placeholder="Min 8 characters, 1 uppercase, 1 number" secureTextEntry value={password} />
 
       <Text style={[globalStyles.label, { marginTop: 10 }]}>Register as:</Text>
-      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+      <View style={{ flexDirection: 'row', columnGap: 10, marginBottom: 20 }}>
         <Button onPress={() => setRole('customer')} style={{ flex: 1 }} variant={role === 'customer' ? 'primary' : 'outline'}>
           Customer
         </Button>
@@ -67,7 +67,7 @@ const RegisterForm = ({ onSubmit, loading = false, serverError = '' }) => {
       {(error || serverError) ? (
         <View style={{ backgroundColor: '#FFF0F0', padding: 12, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: '#FFE0E0' }}>
           <Text style={{ color: '#D32F2F', fontSize: 14, fontWeight: '600', textAlign: 'center' }}>
-            ⚠️ {error || serverError}
+            Warning: {error || serverError}
           </Text>
         </View>
       ) : null}

@@ -26,7 +26,7 @@ const LoginForm = ({ onSubmit, loading = false, serverError = '' }) => {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim]);
 
   const submit = async () => {
     const validation = validateLogin({ email, password });
@@ -39,7 +39,7 @@ const LoginForm = ({ onSubmit, loading = false, serverError = '' }) => {
     try {
       await onSubmit({ email, password });
     } catch (err) {
-      // Error handled by parent via serverError prop
+      // Parent handles server errors through serverError prop.
     }
   };
 
@@ -47,11 +47,11 @@ const LoginForm = ({ onSubmit, loading = false, serverError = '' }) => {
     <Animated.View style={[globalStyles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       <Input keyboardType="email-address" label="Email Address" onChangeText={setEmail} placeholder="you@example.com" value={email} />
       <Input label="Password" onChangeText={setPassword} placeholder="Enter your password" secureTextEntry value={password} />
-      
+
       {(error || serverError) ? (
         <View style={{ backgroundColor: '#FFF0F0', padding: 12, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: '#FFE0E0' }}>
           <Text style={{ color: '#D32F2F', fontSize: 14, fontWeight: '600', textAlign: 'center' }}>
-            ⚠️ {error || serverError}
+            Warning: {error || serverError}
           </Text>
         </View>
       ) : null}

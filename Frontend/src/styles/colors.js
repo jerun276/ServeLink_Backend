@@ -1,27 +1,25 @@
 const colors = {
-  bg: '#FDFBF2', // Warm off-white from image
+  bg: '#F4F7FB',
   card: '#FFFFFF',
-  primary: '#7B61FF', // Purple from image
-  secondary: '#2D2D2D', // Dark grey/black for "All" tab
-  text: '#1A1A1A',
-  subText: '#757575',
-  border: '#F0F0F0',
-  danger: '#F75555',
-  success: '#07BD74',
-  accent: '#E9E9FF',
-  
-  // Category card colors
-  pink: '#FEE6F5',
-  green: '#E6F8E6',
-  yellow: '#FEF7E1',
-  blue: '#E1F5FE',
-  purple: '#F3E8FF',
-  
-  // Text colors for cards
-  pinkText: '#8E4D7E',
-  greenText: '#4D8E4D',
-  yellowText: '#8E7A4D',
-  blueText: '#4D7E8E',
+  primary: '#0F766E',
+  secondary: '#12344D',
+  text: '#10213A',
+  subText: '#66758E',
+  border: '#E1E8F0',
+  danger: '#D64545',
+  success: '#0D9A6D',
+  accent: '#DDECFD',
+
+  pink: '#FDE9F0',
+  green: '#E9F7EE',
+  yellow: '#FFF6DF',
+  blue: '#E5F1FD',
+  purple: '#EEE9FF',
+
+  pinkText: '#8F4C68',
+  greenText: '#2E7A4F',
+  yellowText: '#8A6B2B',
+  blueText: '#2E5F90',
 };
 
 export default colors;

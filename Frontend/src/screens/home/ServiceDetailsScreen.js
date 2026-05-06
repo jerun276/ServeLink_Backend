@@ -1,22 +1,87 @@
-import React, { useEffect, useState } from 'react';
-import { Image, ScrollView, Text, View, Pressable, StyleSheet, TextInput } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import globalStyles from '../../styles/globalStyles';
 import colors from '../../styles/colors';
 import useAuth from '../../hooks/useAuth';
-import { getServiceReviewsRequest, submitServiceReviewRequest } from '../../services/serviceService';
+import { SERVICE_PROVIDERS } from '../../utils/constants';
+import { formatLkr } from '../../utils/currency';
+
+const RATING_FILTERS = [0, 4, 4.5];
 
 const ServiceDetailsScreen = ({ route, navigation }) => {
   const { service } = route.params || {};
   const { user } = useAuth();
+
   const [details, setDetails] = useState({});
-  const [reviews, setReviews] = useState([]);
-  const [myRating, setMyRating] = useState(5);
-  const [myComment, setMyComment] = useState('');
-  const [reviewError, setReviewError] = useState('');
+  const [providerTypeFilter, setProviderTypeFilter] = useState('All');
+  const [ratingFilter, setRatingFilter] = useState(0);
+  const [sortBy, setSortBy] = useState('rating');
+  const [selectedProviderId, setSelectedProviderId] = useState('');
+
+  const allProviders = useMemo(() => {
+    if (!service) return [];
+    const rows = SERVICE_PROVIDERS[service.id] || [];
+
+    if (rows.length > 0) return rows;
+
+    return [
+      {
+        id: `usr-${service.id || 'fallback'}`,
+        name: service.provider || 'Available Provider',
+        photo: service.image,
+        headline: 'Trusted verified provider',
+        providerType: 'Individual',
+        district: service.district || 'Sri Lanka',
+        phone: '+94770000000',
+        rating: 4.5,
+        reviewCount: 30,
+        completedJobs: 120,
+        responseTime: '15 mins',
+        price: service.price,
+        services: service.options || ['General service'],
+        workMention: 'Professional service with clear communication and clean work.',
+        reviews: [{ by: 'Customer', text: 'Reliable and professional service.', rating: 4.5 }],
+      },
+    ];
+  }, [service]);
+
+  const providerTypeOptions = useMemo(() => {
+    const types = Array.from(new Set(allProviders.map(item => item.providerType)));
+    return ['All', ...types];
+  }, [allProviders]);
+
+  const filteredProviders = useMemo(() => {
+    const list = allProviders
+      .filter(provider => (providerTypeFilter === 'All' ? true : provider.providerType === providerTypeFilter))
+      .filter(provider => provider.rating >= ratingFilter);
+
+    const sorted = [...list];
+    if (sortBy === 'rating') sorted.sort((a, b) => b.rating - a.rating);
+    if (sortBy === 'price_low') sorted.sort((a, b) => a.price - b.price);
+    if (sortBy === 'price_high') sorted.sort((a, b) => b.price - a.price);
+    if (sortBy === 'jobs') sorted.sort((a, b) => b.completedJobs - a.completedJobs);
+    return sorted;
+  }, [allProviders, providerTypeFilter, ratingFilter, sortBy]);
+
+  const selectedProvider = useMemo(
+    () => filteredProviders.find(provider => provider.id === selectedProviderId) || filteredProviders[0],
+    [filteredProviders, selectedProviderId],
+  );
+
+  useEffect(() => {
+    if (!selectedProvider && filteredProviders.length > 0) {
+      setSelectedProviderId(filteredProviders[0].id);
+      return;
+    }
+
+    if (selectedProviderId && !filteredProviders.some(provider => provider.id === selectedProviderId)) {
+      setSelectedProviderId(filteredProviders[0]?.id || '');
+    }
+  }, [filteredProviders, selectedProvider, selectedProviderId]);
 
   if (!service) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={styles.fallbackContainer}>
         <Text>Service not found</Text>
         <Pressable onPress={() => navigation.goBack()} style={styles.fallbackButton}>
           <Text style={styles.fallbackButtonText}>Go Back</Text>
@@ -30,133 +95,166 @@ const ServiceDetailsScreen = ({ route, navigation }) => {
   };
 
   const onContinue = () => {
-    navigation.navigate('Checkout', { service, details });
-  };
-
-  const loadReviews = async () => {
-    try {
-      const rows = await getServiceReviewsRequest(service.id || service._id);
-      setReviews(rows);
-    } catch {
-      setReviews([]);
+    if (!selectedProvider) {
+      Alert.alert('No provider selected', 'Please adjust filters or select a provider to continue.');
+      return;
     }
+
+    navigation.navigate('Checkout', {
+      service,
+      details,
+      provider: selectedProvider,
+    });
   };
 
-  useEffect(() => {
-    loadReviews();
-  }, [service?.id, service?._id]);
+  const onContactProvider = async (provider, mode) => {
+    if (user?.role !== 'customer') {
+      Alert.alert('Customers only', 'Only customers can directly contact providers.');
+      return;
+    }
 
-  const onSubmitReview = async () => {
-    setReviewError('');
+    const url = mode === 'call' ? `tel:${provider.phone}` : `sms:${provider.phone}`;
+
     try {
-      await submitServiceReviewRequest({
-        serviceId: service.id || service._id,
-        rating: myRating,
-        comment: myComment,
-      });
-      setMyComment('');
-      loadReviews();
-    } catch (e) {
-      setReviewError(e?.response?.data?.message || 'Failed to submit review');
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Unable to open contact app', 'Please try again on a device with phone/SMS support.');
     }
   };
 
   return (
     <View style={globalStyles.appBackground}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
-        <View style={{ position: 'relative', margin: 16, borderRadius: 34, overflow: 'hidden', backgroundColor: '#F8C8EE' }}>
-          <View style={{ height: 300, justifyContent: 'center', alignItems: 'center' }}>
-            <Image source={{ uri: service.image }} style={{ width: '100%', height: '100%', opacity: 0.32 }} />
-          </View>
-          <Pressable
-            onPress={() => navigation.goBack()}
-            style={{
-              position: 'absolute',
-              top: 14,
-              left: 14,
-              backgroundColor: '#FFFFFFA8',
-              borderRadius: 50,
-              padding: 8,
-            }}
-          >
-            <Text style={{ fontSize: 19 }}>‹</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.heroCard}>
+          <Image source={{ uri: service.image }} style={styles.heroImage} />
+          <View style={styles.heroOverlay} />
+          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>Back</Text>
           </Pressable>
-          <Pressable style={{ position: 'absolute', top: 14, right: 14, backgroundColor: '#FFFFFFA8', borderRadius: 50, padding: 8 }}>
-            <Text style={{ fontSize: 17 }}>🛒</Text>
-          </Pressable>
-          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16 }}>
-            <Text style={{ fontSize: 34 }}>🧹</Text>
+          <View style={styles.heroTextWrap}>
+            <Text style={styles.heroCategory}>{service.category}</Text>
+            <Text style={styles.heroTitle}>{service.title}</Text>
+            <Text style={styles.heroPrice}>Starts from {formatLkr(service.price)} / day</Text>
           </View>
         </View>
 
-        <View style={{ paddingHorizontal: 18 }}>
-          <View>
-            <Text style={{ fontSize: 34, fontWeight: '800', color: colors.text }}>{service.title}</Text>
-            <Text style={{ color: colors.subText, marginTop: 2 }}>
-              horough care, spotless home.
-            </Text>
+        <View style={styles.contentWrap}>
+          <Text style={styles.sectionTitle}>Provider filters</Text>
+
+          <Text style={styles.filterLabel}>Provider type</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+            {providerTypeOptions.map(type => (
+              <FilterChip
+                key={type}
+                active={providerTypeFilter === type}
+                label={type}
+                onPress={() => setProviderTypeFilter(type)}
+              />
+            ))}
+          </ScrollView>
+
+          <Text style={styles.filterLabel}>Minimum rating</Text>
+          <View style={styles.rowWrap}>
+            {RATING_FILTERS.map(value => (
+              <FilterChip
+                key={String(value)}
+                active={ratingFilter === value}
+                label={value === 0 ? 'Any' : `${value}+`}
+                onPress={() => setRatingFilter(value)}
+              />
+            ))}
           </View>
 
-          <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontSize: 34, fontWeight: '900', color: colors.text }}>${service.price}99</Text>
-              <Text style={{ textDecorationLine: 'line-through', color: '#8D8D8D', fontWeight: '700' }}>${service.price + 5}99</Text>
-            </View>
-            <View style={{ backgroundColor: '#D7F4B5', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 6 }}>
-              <Text style={{ fontWeight: '700', color: '#4D7A2C' }}>Up to 30% Off</Text>
-            </View>
+          <Text style={styles.filterLabel}>Sort by</Text>
+          <View style={styles.rowWrap}>
+            <FilterChip active={sortBy === 'rating'} label="Top rated" onPress={() => setSortBy('rating')} />
+            <FilterChip active={sortBy === 'jobs'} label="Most jobs" onPress={() => setSortBy('jobs')} />
+            <FilterChip active={sortBy === 'price_low'} label="Price low" onPress={() => setSortBy('price_low')} />
+            <FilterChip active={sortBy === 'price_high'} label="Price high" onPress={() => setSortBy('price_high')} />
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 18 }}>
-            <PriceChip label="Classic" price={`${service.price}99`} active />
-            <PriceChip label="Premium" price={`${service.price + 4}99`} />
-            <PriceChip label="Platinum" price={`${service.price + 6}99`} />
-          </View>
+          <Text style={styles.sectionTitle}>Available providers</Text>
+          {filteredProviders.map(provider => {
+            const isSelected = selectedProvider?.id === provider.id;
+            return (
+              <Pressable
+                key={provider.id}
+                onPress={() => setSelectedProviderId(provider.id)}
+                style={[styles.providerCard, isSelected && styles.providerCardSelected]}
+              >
+                <View style={styles.providerHeader}>
+                  <Image source={{ uri: provider.photo || service.image }} style={styles.providerPhoto} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.providerName}>{provider.name}</Text>
+                    <Text style={styles.providerHeadline}>{provider.headline || 'Experienced provider'}</Text>
+                    <Text style={styles.providerMeta}>
+                      {provider.providerType} | {provider.district}
+                    </Text>
+                  </View>
+                  <View style={styles.priceBadge}>
+                    <Text style={styles.priceBadgeText}>{formatLkr(provider.price)} / day</Text>
+                  </View>
+                </View>
 
-          <View style={styles.providerCard}>
-            <View style={styles.avatarCircle}>
-              <Text style={{ fontSize: 21 }}>👨</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text }}>Marcus Mane</Text>
-              <Text style={{ color: '#848484', fontWeight: '600' }}>Service Man</Text>
-            </View>
-            <Pressable style={styles.smallIcon}>
-              <Text>📞</Text>
-            </Pressable>
-            <Pressable style={styles.smallIcon}>
-              <Text>💬</Text>
-            </Pressable>
-          </View>
+                <View style={styles.providerStatsRow}>
+                  <Text style={styles.providerStatsText}>Rating {provider.rating} ({provider.reviewCount} reviews)</Text>
+                  <Text style={styles.providerStatsText}>Jobs {provider.completedJobs}</Text>
+                  <Text style={styles.providerStatsText}>Reply {provider.responseTime}</Text>
+                </View>
+                <Text style={styles.providerServices}>Services: {(provider.services || []).join(', ')}</Text>
+                <Text style={styles.workMention}>Work: {provider.workMention || 'Quality service delivery.'}</Text>
 
-          <Text style={[globalStyles.label, { marginTop: 6 }]}>Home Description</Text>
-          <Text style={{ color: colors.subText, lineHeight: 20 }}>
-            Our Home Deep Cleaning service delivers a thorough, spotless clean for every corner of your house.
-            Enjoy a fresh, hygienic, and comfortable living space with professional care.
-          </Text>
-
-          {service.options.map(option => (
-            <View key={option} style={{ marginTop: 24 }}>
-              <Text style={globalStyles.label}>{option}</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-                {['Small', 'Medium', 'Large'].map(val => (
+                <View style={styles.contactRow}>
                   <Pressable
-                    key={val}
-                    onPress={() => handleOptionSelect(option, val)}
-                    style={{
-                      paddingHorizontal: 20,
-                      paddingVertical: 10,
-                      borderRadius: 100,
-                      borderWidth: 2,
-                      borderColor: details[option] === val ? colors.primary : '#F0F0F0',
-                      backgroundColor: details[option] === val ? '#F4EBFF' : 'transparent',
-                    }}
+                    onPress={() => onContactProvider(provider, 'call')}
+                    style={[styles.contactButton, user?.role !== 'customer' && styles.contactDisabled]}
                   >
-                    <Text style={{ 
-                      color: details[option] === val ? colors.primary : colors.subText,
-                      fontWeight: '600'
-                    }}>
-                      {val}
+                    <Text style={styles.contactButtonText}>Call</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => onContactProvider(provider, 'sms')}
+                    style={[styles.contactButton, user?.role !== 'customer' && styles.contactDisabled]}
+                  >
+                    <Text style={styles.contactButtonText}>Message</Text>
+                  </Pressable>
+                </View>
+
+                <Text style={styles.reviewsTitle}>Recent reviews for this user</Text>
+                {(provider.reviews || []).slice(0, 2).map((review, index) => (
+                  <View key={`${provider.id}-review-${index}`} style={styles.reviewItem}>
+                    <Text style={styles.reviewText}>
+                      {review.by}: {review.text}
+                    </Text>
+                    <Text style={styles.reviewRating}>Rating {review.rating}</Text>
+                  </View>
+                ))}
+              </Pressable>
+            );
+          })}
+
+          {filteredProviders.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>No providers found</Text>
+              <Text style={styles.emptyText}>Try different provider filters for this service.</Text>
+            </View>
+          ) : null}
+
+          <Text style={[globalStyles.label, { marginTop: 16 }]}>Service options</Text>
+          {service.options.map(option => (
+            <View key={option} style={{ marginTop: 14 }}>
+              <Text style={styles.optionTitle}>{option}</Text>
+              <View style={styles.rowWrap}>
+                {['Small', 'Medium', 'Large'].map(value => (
+                  <Pressable
+                    key={value}
+                    onPress={() => handleOptionSelect(option, value)}
+                    style={[
+                      styles.optionChip,
+                      details[option] === value ? styles.optionChipActive : null,
+                    ]}
+                  >
+                    <Text style={details[option] === value ? styles.optionChipTextActive : styles.optionChipText}>
+                      {value}
                     </Text>
                   </Pressable>
                 ))}
@@ -164,77 +262,37 @@ const ServiceDetailsScreen = ({ route, navigation }) => {
             </View>
           ))}
 
-          <Text style={[globalStyles.label, { marginTop: 24 }]}>Customer Reviews</Text>
-          {reviews.map(item => (
-            <View key={item._id} style={[styles.reviewCard, { marginBottom: 8 }]}>
-              <Text style={{ fontWeight: '700', color: colors.text }}>{item.customerId?.name || 'Customer'}</Text>
-              <Text style={{ color: colors.subText, marginTop: 2 }}>Rating: {item.rating}/5</Text>
-              <Text style={{ color: colors.subText, marginTop: 4 }}>{item.comment || 'No comment'}</Text>
-            </View>
-          ))}
-          {reviews.length === 0 ? <Text style={{ color: colors.subText }}>No reviews yet.</Text> : null}
-
-          {user?.role === 'customer' ? (
-            <View style={[styles.reviewCard, { marginTop: 12 }]}>
-              <Text style={[globalStyles.label, { marginBottom: 8 }]}>Add Your Review</Text>
-              <View style={{ flexDirection: 'row', gap: 6, marginBottom: 10 }}>
-                {[1, 2, 3, 4, 5].map(star => (
-                  <Pressable key={star} onPress={() => setMyRating(star)} style={{ padding: 4 }}>
-                    <Text style={{ fontSize: 18 }}>{star <= myRating ? '⭐' : '☆'}</Text>
-                  </Pressable>
-                ))}
-              </View>
-              <TextInput
-                value={myComment}
-                onChangeText={setMyComment}
-                placeholder="Write your review comment"
-                placeholderTextColor="#999"
-                style={{ backgroundColor: '#F5F5F5', borderRadius: 12, padding: 10, color: colors.text }}
-              />
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-                {['Great work', 'On time', 'Very professional'].map(text => (
-                  <Pressable key={text} onPress={() => setMyComment(text)} style={styles.quickComment}>
-                    <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 12 }}>{text}</Text>
-                  </Pressable>
-                ))}
-              </View>
-              {reviewError ? <Text style={{ color: '#D63A65', marginTop: 8 }}>{reviewError}</Text> : null}
-              <Pressable onPress={onSubmitReview} style={[styles.bookNowButton, { marginTop: 10 }]}>
-                <Text style={{ color: 'white', fontWeight: '700' }}>Submit Review</Text>
-              </Pressable>
-            </View>
+          {user?.role !== 'customer' ? (
+            <Text style={styles.helperText}>Contact actions are visible for all, but only customers can use call/message.</Text>
           ) : null}
         </View>
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 22, paddingHorizontal: 20, paddingVertical: 14 }}>
-          <Text style={{ fontSize: 34, fontWeight: '900', color: colors.text }}>${service.price}99</Text>
+        <View style={styles.bottomPriceWrap}>
+          <Text style={styles.bottomPrice}>{selectedProvider ? `${formatLkr(selectedProvider.price)} / day` : `${formatLkr(service.price)} / day`}</Text>
+          <Text style={styles.bottomSubTitle}>{selectedProvider ? selectedProvider.name : 'Select provider'}</Text>
         </View>
         <Pressable onPress={onContinue} style={styles.bookNowButton}>
-          <Text style={{ color: 'white', fontWeight: '800', fontSize: 18 }}>Book Now</Text>
+          <Text style={styles.bookNowText}>Book Now</Text>
         </Pressable>
       </View>
     </View>
   );
 };
 
-const PriceChip = ({ label, price, active = false }) => (
-  <Pressable
-    style={{
-      backgroundColor: active ? '#1E1E1E' : '#F2F2F6',
-      borderRadius: 14,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      minWidth: 92,
-    }}
-  >
-    <Text style={{ color: active ? '#FFFFFF' : '#9A9A9A', fontWeight: '600', fontSize: 12 }}>{label}</Text>
-    <Text style={{ color: active ? '#FFFFFF' : '#323232', fontWeight: '800', marginTop: 2 }}>${price}</Text>
+const FilterChip = ({ label, active, onPress }) => (
+  <Pressable onPress={onPress} style={[styles.filterChip, active && styles.filterChipActive]}>
+    <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
   </Pressable>
 );
 
 const styles = StyleSheet.create({
+  fallbackContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   fallbackButton: {
     marginTop: 12,
     backgroundColor: colors.primary,
@@ -242,62 +300,308 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 9,
   },
-  fallbackButtonText: { color: 'white', fontWeight: '700' },
+  fallbackButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  scrollContent: {
+    paddingBottom: 150,
+  },
+  heroCard: {
+    margin: 16,
+    borderRadius: 28,
+    overflow: 'hidden',
+    height: 260,
+    position: 'relative',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(8, 30, 46, 0.45)',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 14,
+    left: 14,
+    backgroundColor: '#FFFFFFD9',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  backButtonText: {
+    color: '#1A2A44',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  heroTextWrap: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 16,
+  },
+  heroCategory: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    opacity: 0.95,
+    fontWeight: '700',
+  },
+  heroTitle: {
+    color: '#FFFFFF',
+    fontSize: 27,
+    lineHeight: 33,
+    fontWeight: '800',
+    marginTop: 4,
+  },
+  heroPrice: {
+    color: '#E2F2FF',
+    marginTop: 6,
+    fontWeight: '700',
+  },
+  contentWrap: {
+    paddingHorizontal: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.text,
+    marginBottom: 10,
+  },
+  filterLabel: {
+    fontSize: 13,
+    color: '#4F617A',
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  filterRow: {
+    marginBottom: 10,
+  },
+  rowWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+  },
+  filterChip: {
+    backgroundColor: '#EAF0F6',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  filterChipActive: {
+    backgroundColor: '#0F766E',
+  },
+  filterChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#42526A',
+  },
+  filterChipTextActive: {
+    color: '#FFFFFF',
+  },
   providerCard: {
-    marginTop: 16,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#DEE6EF',
+    padding: 14,
+    marginBottom: 12,
+  },
+  providerCardSelected: {
+    borderColor: colors.primary,
+    backgroundColor: '#F5FCFA',
+  },
+  providerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    marginBottom: 8,
   },
-  avatarCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#ECECEC',
-    alignItems: 'center',
-    justifyContent: 'center',
+  providerPhoto: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    marginRight: 10,
   },
-  smallIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F4F4F4',
+  providerName: {
+    color: '#13253F',
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  providerHeadline: {
+    color: '#2C4D70',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  providerMeta: {
+    color: '#60728E',
+    marginTop: 3,
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  priceBadge: {
+    backgroundColor: '#EEF4FF',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  priceBadgeText: {
+    color: '#0A3D75',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  providerStatsRow: {
+    marginBottom: 8,
+  },
+  providerStatsText: {
+    color: '#526583',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 3,
+  },
+  providerServices: {
+    color: '#314B6B',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  workMention: {
+    color: '#5A6F89',
+    fontSize: 12,
+    marginBottom: 10,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  contactButton: {
+    backgroundColor: '#0F766E',
+    borderRadius: 12,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    marginRight: 8,
+  },
+  contactDisabled: {
+    opacity: 0.45,
+  },
+  contactButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  reviewsTitle: {
+    color: '#152B4C',
+    fontWeight: '700',
+    marginBottom: 6,
+    fontSize: 12,
+  },
+  reviewItem: {
+    backgroundColor: '#F6F9FD',
+    borderRadius: 10,
+    padding: 8,
+    marginBottom: 6,
+  },
+  reviewText: {
+    color: '#3A4F6F',
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  reviewRating: {
+    color: '#607089',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  emptyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#DEE6EF',
+    marginBottom: 10,
+  },
+  emptyTitle: {
+    color: colors.text,
+    fontWeight: '700',
+  },
+  emptyText: {
+    marginTop: 4,
+    color: colors.subText,
+  },
+  optionTitle: {
+    color: '#23385A',
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  optionChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#D8E2ED',
+    backgroundColor: '#FFFFFF',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  optionChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: '#E9F7F4',
+  },
+  optionChipText: {
+    color: '#5E6F85',
+    fontWeight: '600',
+  },
+  optionChipTextActive: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  helperText: {
+    marginTop: 8,
+    color: '#5C6E86',
+    fontSize: 12,
+    marginBottom: 8,
   },
   bottomBar: {
     position: 'absolute',
-    bottom: 20,
-    left: 16,
-    right: 16,
-    borderRadius: 30,
-    backgroundColor: '#EEEAFD',
+    bottom: 16,
+    left: 14,
+    right: 14,
+    borderRadius: 20,
+    backgroundColor: '#E7EFF8',
     padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+  },
+  bottomPriceWrap: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginRight: 8,
+  },
+  bottomPrice: {
+    color: '#10213A',
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  bottomSubTitle: {
+    color: '#63738A',
+    marginTop: 3,
+    fontSize: 11,
   },
   bookNowButton: {
-    flex: 1,
     backgroundColor: colors.primary,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 18,
+    borderRadius: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
-  reviewCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 12,
-  },
-  quickComment: {
-    backgroundColor: '#F4EBFF',
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+  bookNowText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14,
   },
 });
 

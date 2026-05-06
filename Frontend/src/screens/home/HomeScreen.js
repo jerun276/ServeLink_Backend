@@ -1,8 +1,23 @@
-import { ScrollView, Text, TextInput, View, Pressable } from 'react-native';
+import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useMemo, useState } from 'react';
 import globalStyles from '../../styles/globalStyles';
 import colors from '../../styles/colors';
-import { SERVICES_CATALOG } from '../../utils/constants';
+import { SERVICES_CATALOG, SERVICE_PROVIDERS } from '../../utils/constants';
+import { formatLkr } from '../../utils/currency';
+
+const SORT_OPTIONS = [
+  { key: 'popular', label: 'Popular' },
+  { key: 'rating', label: 'Top rated' },
+  { key: 'price_low', label: 'Price low' },
+  { key: 'price_high', label: 'Price high' },
+];
+
+const PRICE_OPTIONS = [
+  { key: 'all', label: 'Any price' },
+  { key: 'budget', label: 'LKR 3,000 / day' },
+  { key: 'standard', label: 'LKR 4,000 / day' },
+  { key: 'premium', label: 'LKR 5,000+ / day' },
+];
 
 const HomeScreen = ({ navigation }) => {
   const [query, setQuery] = useState('');
@@ -17,180 +32,157 @@ const HomeScreen = ({ navigation }) => {
   );
 
   const filteredServices = useMemo(() => {
-    const colorPool = ['#F8C6EB', '#D6F1C9', '#F8E7B6', '#CDEAFF', '#EBD8FF'];
     const normalizedQuery = query.trim().toLowerCase();
+    const getTopProviderRating = serviceItem => {
+      const providers = SERVICE_PROVIDERS[serviceItem.id] || [];
+      if (!providers.length) return Number(serviceItem.rating || 0);
+      return Math.max(...providers.map(provider => provider.rating || 0));
+    };
 
     const priceBounds = {
       all: { min: 0, max: Number.MAX_SAFE_INTEGER },
-      budget: { min: 0, max: 24 },
-      standard: { min: 25, max: 29 },
-      premium: { min: 30, max: Number.MAX_SAFE_INTEGER },
+      budget: { min: 0, max: 3 },
+      standard: { min: 4, max: 4 },
+      premium: { min: 5, max: Number.MAX_SAFE_INTEGER },
     };
     const selectedPrice = priceBounds[priceFilter] || priceBounds.all;
 
-    const list = SERVICES_CATALOG
-      .filter(item => {
-        const matchesQuery =
-          !normalizedQuery ||
-          item.title.toLowerCase().includes(normalizedQuery) ||
-          item.provider.toLowerCase().includes(normalizedQuery) ||
-          item.category.toLowerCase().includes(normalizedQuery);
-        const matchesCategory = activeTab === 'All' || item.category === activeTab;
-        const matchesPrice = item.price >= selectedPrice.min && item.price <= selectedPrice.max;
-        const matchesRating = Number(item.rating || 0) >= minRating;
-        return matchesQuery && matchesCategory && matchesPrice && matchesRating;
-      })
-      .map((service, index) => ({
-        id: service.id,
-        title: service.title,
-        category: service.category,
-        offer: `${service.provider} • ${service.district || 'Sri Lanka'} • ⭐ ${service.rating || 4.5}`,
-        badge: '✨',
-        color: colorPool[index % colorPool.length],
-        emoji: ['🧹', '🛠️', '🧺', '🎨', '🚚'][index % 5],
-        service,
-      }));
+    const list = SERVICES_CATALOG.filter(item => {
+      const topProviderRating = getTopProviderRating(item);
+      const matchesQuery =
+        !normalizedQuery ||
+        item.title.toLowerCase().includes(normalizedQuery) ||
+        item.provider.toLowerCase().includes(normalizedQuery) ||
+        item.category.toLowerCase().includes(normalizedQuery);
+      const matchesCategory = activeTab === 'All' || item.category === activeTab;
+      const matchesPrice = item.price >= selectedPrice.min && item.price <= selectedPrice.max;
+      const matchesRating = topProviderRating >= minRating;
+      return matchesQuery && matchesCategory && matchesPrice && matchesRating;
+    });
 
     const sorted = [...list];
-    if (sortBy === 'price_low') sorted.sort((a, b) => a.service.price - b.service.price);
-    if (sortBy === 'price_high') sorted.sort((a, b) => b.service.price - a.service.price);
-    if (sortBy === 'rating') sorted.sort((a, b) => (b.service.rating || 0) - (a.service.rating || 0));
-    if (sortBy === 'popular') sorted.sort((a, b) => (b.service.popularity || 0) - (a.service.popularity || 0));
+    if (sortBy === 'price_low') sorted.sort((a, b) => a.price - b.price);
+    if (sortBy === 'price_high') sorted.sort((a, b) => b.price - a.price);
+    if (sortBy === 'rating') sorted.sort((a, b) => getTopProviderRating(b) - getTopProviderRating(a));
+    if (sortBy === 'popular') sorted.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
     return sorted;
   }, [activeTab, minRating, priceFilter, query, sortBy]);
+
+  const featuredService = filteredServices[0] || SERVICES_CATALOG[0];
+  const featuredTopRating = useMemo(() => {
+    const providers = SERVICE_PROVIDERS[featuredService.id] || [];
+    if (!providers.length) return Number(featuredService.rating || 0);
+    return Math.max(...providers.map(provider => provider.rating || 0));
+  }, [featuredService]);
 
   const openService = service => {
     navigation.navigate('ServiceDetails', { service });
   };
 
+  const resetFilters = () => {
+    setSortBy('popular');
+    setPriceFilter('all');
+    setMinRating(0);
+  };
+
   return (
     <View style={globalStyles.appBackground}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={globalStyles.screen}>
           <View style={globalStyles.headerRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: '#E0E0E0', overflow: 'hidden' }}>
-                <Text style={{ fontSize: 30, textAlign: 'center' }}>👩</Text>
-              </View>
-              <View>
-                <Text style={globalStyles.subTitle}>Welcome</Text>
-                <Text style={{ fontSize: 16, fontWeight: '700' }}>Anna Grace</Text>
-              </View>
+            <View>
+              <Text style={styles.welcomeText}>Welcome back</Text>
+              <Text style={styles.customerName}>Anna Grace</Text>
+              <Text style={styles.locationText}>Colombo, Sri Lanka</Text>
             </View>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <Pressable style={globalStyles.iconButton}>
-                <Text style={{ fontSize: 18 }}>📍</Text>
-              </Pressable>
-              <Pressable style={globalStyles.iconButton}>
-                <Text style={{ fontSize: 18 }}>🛒</Text>
-              </Pressable>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarLabel}>AG</Text>
             </View>
           </View>
 
-          <View style={{ marginBottom: 24 }}>
-            <Text style={globalStyles.title}>Smart Home,</Text>
-            <Text style={[globalStyles.title, { fontStyle: 'italic', fontWeight: '400' }]}>Smooth Services</Text>
+          <Text style={styles.pageTitle}>Find trusted services you can book today</Text>
+
+          <View style={styles.searchBox}>
+            <TextInput
+              onChangeText={setQuery}
+              placeholder="Search by service, provider or category"
+              placeholderTextColor="#7B8596"
+              style={styles.searchInput}
+              value={query}
+            />
           </View>
 
-          <View style={{ marginBottom: 20 }}>
-            <View style={[globalStyles.input, { flexDirection: 'row', alignItems: 'center', gap: 10 }]}>
-              <Text style={{ fontSize: 18 }}>🔍</Text>
-              <TextInput
-                onChangeText={setQuery}
-                placeholder="Search"
-                placeholderTextColor="#9E9E9E"
-                style={{ flex: 1, color: colors.text, fontSize: 16 }}
-                value={query}
-              />
-            </View>
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalList}>
             {categories.map(tab => (
               <Pressable
                 key={tab}
                 onPress={() => setActiveTab(tab)}
-                style={[
-                  globalStyles.pill,
-                  activeTab === tab && globalStyles.activePill,
-                  { marginRight: 8, paddingHorizontal: 18 },
-                ]}
+                style={[styles.categoryChip, activeTab === tab && styles.activeCategoryChip]}
               >
-                <Text style={[globalStyles.pillText, activeTab === tab && globalStyles.activePillText]}>{tab}</Text>
+                <Text style={[styles.categoryChipText, activeTab === tab && styles.activeCategoryChipText]}>{tab}</Text>
               </Pressable>
             ))}
           </ScrollView>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-            <FilterChip label="Popular" active={sortBy === 'popular'} onPress={() => setSortBy('popular')} />
-            <FilterChip label="Top Rated" active={sortBy === 'rating'} onPress={() => setSortBy('rating')} />
-            <FilterChip label="Price ↑" active={sortBy === 'price_low'} onPress={() => setSortBy('price_low')} />
-            <FilterChip label="Price ↓" active={sortBy === 'price_high'} onPress={() => setSortBy('price_high')} />
-            <FilterChip label="Budget" active={priceFilter === 'budget'} onPress={() => setPriceFilter('budget')} />
-            <FilterChip label="Standard" active={priceFilter === 'standard'} onPress={() => setPriceFilter('standard')} />
-            <FilterChip label="Premium" active={priceFilter === 'premium'} onPress={() => setPriceFilter('premium')} />
-            <FilterChip label="⭐ 4.5+" active={minRating === 4.5} onPress={() => setMinRating(minRating === 4.5 ? 0 : 4.5)} />
-            <FilterChip label="Reset" active={false} onPress={() => {
-              setSortBy('popular');
-              setPriceFilter('all');
-              setMinRating(0);
-            }} />
-          </ScrollView>
-
-          <View style={[globalStyles.card, { backgroundColor: '#E6F5E7', padding: 0, overflow: 'hidden', height: 220, flexDirection: 'row' }]}>
-            <View style={{ flex: 1, padding: 20, justifyContent: 'center' }}>
-              <View
-                style={{
-                  backgroundColor: '#E3EFE2',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 100,
-                  alignSelf: 'flex-start',
-                  marginBottom: 10,
-                }}
-              >
-                <Text style={{ fontSize: 12, fontWeight: '700' }}>24/7 Support</Text>
+          <View style={styles.filterPanel}>
+            <FilterGroup
+              activeValue={sortBy}
+              label="Sort"
+              onChange={setSortBy}
+              options={SORT_OPTIONS}
+            />
+            <FilterGroup
+              activeValue={priceFilter}
+              label="Price"
+              onChange={setPriceFilter}
+              options={PRICE_OPTIONS}
+            />
+            <View style={styles.ratingRow}>
+              <Text style={styles.filterLabel}>Minimum rating</Text>
+              <View style={styles.ratingChipsWrap}>
+                <FilterChip label="Any" active={minRating === 0} onPress={() => setMinRating(0)} />
+                <FilterChip label="4.0+" active={minRating === 4} onPress={() => setMinRating(4)} />
+                <FilterChip label="4.5+" active={minRating === 4.5} onPress={() => setMinRating(4.5)} />
+                <FilterChip label="Reset" active={false} onPress={resetFilters} />
               </View>
-              <View style={{ position: 'absolute', top: 18, right: 18, backgroundColor: '#EEFFFD', borderRadius: 100, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Text style={{ fontSize: 22, fontWeight: '800' }}>40% off</Text>
-              </View>
-              <Text style={{ fontSize: 14, color: '#5E6A61', marginBottom: 8, fontWeight: '600' }}>Fresh, Fast Cleaning</Text>
-              <Text style={{ fontSize: 34, fontWeight: '800', lineHeight: 38 }}>Quick Home{'\n'}Cleaning Service</Text>
-              <Pressable
-                onPress={() => openService(filteredServices[0]?.service || SERVICES_CATALOG[0])}
-                style={{
-                  backgroundColor: colors.secondary,
-                  paddingHorizontal: 15,
-                  paddingVertical: 10,
-                  borderRadius: 100,
-                  alignSelf: 'flex-start',
-                  marginTop: 15,
-                }}
-              >
-                <Text style={{ color: 'white', fontWeight: '700', fontSize: 12 }}>Book Now</Text>
-              </Pressable>
-            </View>
-            <View style={{ width: '34%', height: '100%', justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 8 }}>
-              <Text style={{ fontSize: 96 }}>🧹</Text>
             </View>
           </View>
 
-          <View style={{ flexDirection: 'column', gap: 14 }}>
+          <Pressable onPress={() => openService(featuredService)} style={styles.featuredCard}>
+            <ImageBackground
+              imageStyle={styles.featuredImage}
+              source={{ uri: featuredService.image }}
+              style={styles.featuredCardContent}
+            >
+              <View style={styles.featuredOverlay} />
+              <View style={styles.featuredTextLayer}>
+                <Text style={styles.featuredBadge}>Fast booking</Text>
+                <Text style={styles.featuredTitle}>{featuredService.title}</Text>
+                <Text style={styles.featuredMeta}>
+                  {featuredService.provider} | {featuredService.district} | top user rating {featuredTopRating.toFixed(1)}
+                </Text>
+                <View style={styles.featuredPriceRow}>
+                  <Text style={styles.featuredPrice}>{formatLkr(featuredService.price)} / day</Text>
+                  <Text style={styles.featuredPriceLabel}>starting price</Text>
+                </View>
+              </View>
+            </ImageBackground>
+          </Pressable>
+
+          <View style={styles.servicesList}>
             {filteredServices.map(service => (
               <ServiceCard
                 key={service.id}
-                title={service.title}
-                offer={service.description}
-                color={service.color}
-                onPress={() => openService(service.service)}
-                emoji={service.emoji}
-                badge={service.badge}
+                onPress={() => openService(service)}
+                service={service}
+                providerCount={(SERVICE_PROVIDERS[service.id] || []).length}
+                topProviderRating={(SERVICE_PROVIDERS[service.id] || []).length ? Math.max(...SERVICE_PROVIDERS[service.id].map(provider => provider.rating || 0)) : Number(service.rating || 0)}
               />
             ))}
             {filteredServices.length === 0 ? (
-              <View style={[globalStyles.card, { backgroundColor: '#FFFFFF', padding: 22 }]}>
-                <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>No services found</Text>
-                <Text style={{ color: colors.subText, marginTop: 4 }}>Try another filter or search text.</Text>
+              <View style={[globalStyles.card, styles.emptyState]}>
+                <Text style={styles.emptyStateTitle}>No services found</Text>
+                <Text style={styles.emptyStateText}>Try a different search, rating, or price filter.</Text>
               </View>
             ) : null}
           </View>
@@ -200,22 +192,43 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
-const ServiceCard = ({ title, offer, color, onPress, emoji, badge }) => (
-  <Pressable onPress={onPress} style={[globalStyles.card, { backgroundColor: color, flexDirection: 'row', height: 155, padding: 0, overflow: 'hidden', marginBottom: 0 }]}>
-    <View style={{ flex: 1, padding: 20, justifyContent: 'center' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 16 }}>{badge}</Text>
+const FilterGroup = ({ label, options, activeValue, onChange }) => (
+  <View style={styles.filterGroup}>
+    <Text style={styles.filterLabel}>{label}</Text>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      {options.map(option => (
+        <FilterChip
+          key={option.key}
+          active={activeValue === option.key}
+          label={option.label}
+          onPress={() => onChange(option.key)}
+        />
+      ))}
+    </ScrollView>
+  </View>
+);
+
+const ServiceCard = ({ service, onPress, providerCount, topProviderRating }) => (
+  <Pressable onPress={onPress} style={styles.serviceCard}>
+    <Image source={{ uri: service.image }} style={styles.serviceImage} />
+    <View style={styles.serviceInfo}>
+      <Text style={styles.serviceTitle}>{service.title}</Text>
+      <Text style={styles.serviceMeta}>
+        {service.provider} | {service.district}
+      </Text>
+      <View style={styles.serviceStatsRow}>
+        <Text style={styles.statText}>Users {providerCount || 1}</Text>
+        <Text style={styles.statText}>Top rating {Number(topProviderRating || 0).toFixed(1)}</Text>
+      </View>
+      <Text style={styles.optionText}>
+        Options: {service.options.slice(0, 2).join(', ')}
+      </Text>
+      <View style={styles.purchaseRow}>
+        <Text style={styles.priceText}>{formatLkr(service.price)} / day</Text>
+        <View style={styles.purchaseButton}>
+          <Text style={styles.purchaseButtonText}>Purchase</Text>
         </View>
-        <Text style={{ fontWeight: '800', fontSize: 24 }}>{title}</Text>
       </View>
-      <Text style={{ fontSize: 15, color: 'rgba(0,0,0,0.58)', fontWeight: '600', marginBottom: 12 }}>{offer}</Text>
-      <View style={{ backgroundColor: 'rgba(255,255,255,0.62)', paddingHorizontal: 18, paddingVertical: 8, borderRadius: 100, alignSelf: 'flex-start' }}>
-        <Text style={{ fontWeight: '700', fontSize: 12 }}>Book Now</Text>
-      </View>
-    </View>
-    <View style={{ width: '35%', height: '100%', alignItems: 'center', justifyContent: 'center', paddingRight: 4 }}>
-      <Text style={{ fontSize: 74 }}>{emoji}</Text>
     </View>
   </Pressable>
 );
@@ -223,18 +236,275 @@ const ServiceCard = ({ title, offer, color, onPress, emoji, badge }) => (
 const FilterChip = ({ label, active, onPress }) => (
   <Pressable
     onPress={onPress}
-    style={{
-      backgroundColor: active ? colors.primary : '#FFFFFF',
-      borderRadius: 99,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      marginRight: 8,
-      borderWidth: 1,
-      borderColor: active ? colors.primary : '#EAEAEA',
-    }}
+    style={[styles.filterChip, active && styles.activeFilterChip]}
   >
-    <Text style={{ color: active ? '#FFFFFF' : '#5E5E5E', fontWeight: '700', fontSize: 12 }}>{label}</Text>
+    <Text style={[styles.filterChipText, active && styles.activeFilterChipText]}>{label}</Text>
   </Pressable>
 );
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    paddingBottom: 120,
+  },
+  welcomeText: {
+    color: '#5A6578',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  customerName: {
+    color: '#182438',
+    fontSize: 22,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  locationText: {
+    color: '#6D7787',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  avatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#0F766E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarLabel: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  pageTitle: {
+    fontSize: 29,
+    lineHeight: 35,
+    fontWeight: '800',
+    color: '#10213A',
+    marginBottom: 20,
+  },
+  searchBox: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DBE1EA',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    marginBottom: 18,
+  },
+  searchInput: {
+    color: '#162339',
+    fontSize: 15,
+    paddingVertical: 9,
+  },
+  horizontalList: {
+    marginBottom: 16,
+  },
+  categoryChip: {
+    backgroundColor: '#EEF2F7',
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
+  activeCategoryChip: {
+    backgroundColor: '#0F766E',
+  },
+  categoryChipText: {
+    color: '#415067',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  activeCategoryChipText: {
+    color: '#FFFFFF',
+  },
+  filterPanel: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E7EE',
+    padding: 14,
+    marginBottom: 18,
+  },
+  filterGroup: {
+    marginBottom: 12,
+  },
+  filterLabel: {
+    color: '#15253F',
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  filterChip: {
+    backgroundColor: '#F4F7FA',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
+  activeFilterChip: {
+    backgroundColor: '#102A43',
+  },
+  filterChipText: {
+    color: '#42516A',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  activeFilterChipText: {
+    color: '#FFFFFF',
+  },
+  ratingRow: {
+    marginTop: 2,
+  },
+  ratingChipsWrap: {
+    flexDirection: 'row',
+  },
+  featuredCard: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    marginBottom: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 3,
+  },
+  featuredCardContent: {
+    height: 230,
+    justifyContent: 'flex-end',
+  },
+  featuredImage: {
+    borderRadius: 24,
+  },
+  featuredOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(7, 24, 44, 0.45)',
+  },
+  featuredTextLayer: {
+    padding: 18,
+  },
+  featuredBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    color: '#0B2D4D',
+    fontWeight: '700',
+    fontSize: 11,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginBottom: 10,
+  },
+  featuredTitle: {
+    color: '#FFFFFF',
+    fontSize: 23,
+    fontWeight: '800',
+    lineHeight: 29,
+  },
+  featuredMeta: {
+    color: '#DEECFF',
+    fontSize: 13,
+    marginTop: 7,
+  },
+  featuredPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: 10,
+  },
+  featuredPrice: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  featuredPriceLabel: {
+    color: '#DAE7FA',
+    fontSize: 12,
+    marginLeft: 8,
+  },
+  servicesList: {
+    rowGap: 12,
+  },
+  serviceCard: {
+    flexDirection: 'row',
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E7EE',
+    overflow: 'hidden',
+  },
+  serviceImage: {
+    width: 124,
+    height: 170,
+  },
+  serviceInfo: {
+    flex: 1,
+    padding: 12,
+  },
+  serviceTitle: {
+    fontSize: 16,
+    color: '#12223C',
+    fontWeight: '800',
+    lineHeight: 21,
+  },
+  serviceMeta: {
+    marginTop: 5,
+    color: '#607089',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  serviceStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 7,
+  },
+  statText: {
+    color: '#3D4D66',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  optionText: {
+    color: '#64758D',
+    fontSize: 12,
+    marginTop: 8,
+    lineHeight: 17,
+  },
+  purchaseRow: {
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceText: {
+    fontSize: 16,
+    color: '#0F172A',
+    fontWeight: '800',
+    flexShrink: 1,
+    marginRight: 8,
+  },
+  purchaseButton: {
+    backgroundColor: '#0F766E',
+    borderRadius: 999,
+    paddingHorizontal: 15,
+    paddingVertical: 9,
+  },
+  purchaseButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  emptyState: {
+    padding: 20,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E2E7EE',
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  emptyStateText: {
+    color: colors.subText,
+    marginTop: 4,
+  },
+});
 
 export default HomeScreen;

@@ -1,10 +1,8 @@
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { useRef } from 'react';
-import Animated, { FadeIn, FadeInDown, FadeInUp, FadeOut, FadeOutDown, FadeOutUp } from 'react-native-reanimated';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import LoginForm from '../../components/auth/LoginForm';
 import useAuth from '../../hooks/useAuth';
 import globalStyles from '../../styles/globalStyles';
-import colors from '../../styles/colors';
 
 const LoginScreen = ({ navigation }) => {
   const { login, error, loading } = useAuth();
@@ -15,55 +13,32 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View style={globalStyles.appBackground}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      <View style={styles.bgShapeTop} />
+      <View style={styles.bgShapeBottom} />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView 
-          contentContainerStyle={{ flexGrow: 1 }} 
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
         >
-          <View style={[globalStyles.screen, { justifyContent: 'center', paddingVertical: 60 }]}>
-            <Animated.View entering={FadeInDown.delay(100).duration(600)} exiting={FadeOutUp.duration(300)}>
-              <View style={{ alignItems: 'center', marginBottom: 50 }}>
-                <View style={{ 
-                  width: 120, 
-                  height: 120, 
-                  borderRadius: 40, 
-                  backgroundColor: colors.primary, 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  shadowColor: colors.primary,
-                  shadowOffset: { width: 0, height: 10 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 20,
-                  elevation: 10
-                }}>
-                  <Text style={{ fontSize: 60 }}>🔐</Text>
-                </View>
-                <Animated.Text 
-                  entering={FadeInDown.delay(300).duration(600)}
-                  style={[globalStyles.title, { marginTop: 30, textAlign: 'center' }]}
-                >
-                  Welcome Back
-                </Animated.Text>
-                <Animated.Text 
-                  entering={FadeInDown.delay(400).duration(600)}
-                  style={[globalStyles.subTitle, { textAlign: 'center', marginTop: 10 }]}
-                >
-                  Sign in to access your services
-                </Animated.Text>
-              </View>
+          <View style={[globalStyles.screen, styles.screenContent]}>
+            <Animated.View entering={FadeInDown.delay(100).duration(600)}>
+              <Text style={styles.brandName}>ServeLink</Text>
+              <Text style={styles.title}>Welcome back</Text>
+              <Text style={styles.subtitle}>Sign in to continue booking trusted local services.</Text>
             </Animated.View>
 
-            <Animated.View entering={FadeInUp.delay(500).duration(600)} exiting={FadeOutDown.duration(300)}>
+            <Animated.View entering={FadeInUp.delay(350).duration(650)} style={styles.formCard}>
               <LoginForm loading={loading} onSubmit={handleLogin} serverError={error} />
             </Animated.View>
 
-            <Animated.View entering={FadeIn.delay(700).duration(600)} style={{ marginTop: 40, flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
-              <Text style={{ color: colors.subText, fontWeight: '600' }}>New here?</Text>
-              <Pressable onPress={() => navigation.navigate('Register')}>
-                <Text style={{ color: colors.primary, fontWeight: '800' }}>Create Account</Text>
+            <Animated.View entering={FadeIn.delay(550).duration(650)} style={styles.switchRow}>
+              <Text style={styles.switchHint}>New to ServeLink?</Text>
+              <Pressable onPress={() => navigation.navigate('Register')} style={styles.switchButton}>
+                <Text style={styles.switchButtonText}>Create account</Text>
               </Pressable>
             </Animated.View>
           </View>
@@ -72,5 +47,78 @@ const LoginScreen = ({ navigation }) => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  bgShapeTop: {
+    position: 'absolute',
+    top: -80,
+    left: -40,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: '#D4F0EC',
+  },
+  bgShapeBottom: {
+    position: 'absolute',
+    bottom: -120,
+    right: -40,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: '#E9EFFA',
+  },
+  screenContent: {
+    justifyContent: 'center',
+    paddingVertical: 56,
+  },
+  brandName: {
+    color: '#0F766E',
+    fontWeight: '800',
+    fontSize: 16,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  title: {
+    color: '#13243D',
+    fontSize: 34,
+    lineHeight: 40,
+    fontWeight: '800',
+  },
+  subtitle: {
+    color: '#607089',
+    marginTop: 10,
+    fontSize: 15,
+    lineHeight: 22,
+    maxWidth: 320,
+  },
+  formCard: {
+    marginTop: 30,
+  },
+  switchRow: {
+    marginTop: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    columnGap: 8,
+  },
+  switchHint: {
+    color: '#5F6D84',
+    fontWeight: '600',
+  },
+  switchButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CCD6E3',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  switchButtonText: {
+    color: '#0F766E',
+    fontWeight: '800',
+    fontSize: 13,
+  },
+});
 
 export default LoginScreen;
