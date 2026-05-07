@@ -18,6 +18,16 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Please provide a password'],
       select: false,
     },
+    refreshTokenHash: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    refreshTokenExpiresAt: {
+      type: Date,
+      default: null,
+      select: false,
+    },
     phone: {
       type: String,
       required: [true, 'Please provide a phone number'],
@@ -47,10 +57,9 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+  },
+  {
+    timestamps: true,
   }
 )
 

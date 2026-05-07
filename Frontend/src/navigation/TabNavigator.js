@@ -9,6 +9,8 @@ import HomeScreen from '../screens/home/HomeScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import ProviderDashboardScreen from '../screens/profile/ProviderDashboardScreen';
 import ManageServicesScreen from '../screens/profile/ManageServicesScreen';
+import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
+import ProviderReviewScreen from '../screens/admin/ProviderReviewScreen';
 import ServiceDetailsScreen from '../screens/home/ServiceDetailsScreen';
 import CheckoutScreen from '../screens/home/CheckoutScreen';
 import PinScreen from '../screens/home/PinScreen';
@@ -45,16 +47,23 @@ const ChatStack = () => (
   </ChatStackNav.Navigator>
 );
 
-const ProfileStack = ({ profileRootComponent }) => (
+const ProfileStack = ({ profileRootComponent, role }) => (
   <ProfileStackNav.Navigator screenOptions={{ headerShown: false }}>
     <ProfileStackNav.Screen component={profileRootComponent} name="ProfileMain" />
-    <ProfileStackNav.Screen component={ManageServicesScreen} name="ManageServices" />
+    {role === 'provider' ? (
+      <ProfileStackNav.Screen component={ManageServicesScreen} name="ManageServices" />
+    ) : null}
+    {role === 'admin' ? (
+      <ProfileStackNav.Screen component={ProviderReviewScreen} name="ProviderReview" />
+    ) : null}
   </ProfileStackNav.Navigator>
 );
 
 const TabNavigator = () => {
   const { user } = useAuth();
-  const ProfileRootScreen = user?.role === 'provider' ? ProviderDashboardScreen : ProfileScreen;
+  let ProfileRootScreen = ProfileScreen;
+  if (user?.role === 'provider') ProfileRootScreen = ProviderDashboardScreen;
+  if (user?.role === 'admin') ProfileRootScreen = AdminDashboardScreen;
 
   return (
     <View style={{ flex: 1 }}>
@@ -101,7 +110,7 @@ const TabNavigator = () => {
           }}
         />
         <Tab.Screen
-          children={() => <ProfileStack profileRootComponent={ProfileRootScreen} />}
+          children={() => <ProfileStack profileRootComponent={ProfileRootScreen} role={user?.role} />}
           name="Profile"
           options={{
             tabBarIcon: ({ color, focused }) => (

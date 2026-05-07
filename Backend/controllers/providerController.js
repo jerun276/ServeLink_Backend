@@ -178,18 +178,33 @@ export const updateProvider = async (req, res, next) => {
 export const verifyProvider = async (req, res, next) => {
   try {
     const { id } = req.params
-    const { status, reason } = req.body
+    const { status, action, reason } = req.body
 
-    if (!['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'Invalid status' })
+    const normalizedAction = action ? String(action).toLowerCase() : null
+    const normalizedStatus = status ? String(status).toLowerCase() : null
+    const decision =
+      normalizedStatus && ['approved', 'rejected'].includes(normalizedStatus)
+        ? normalizedStatus
+        : normalizedAction === 'approve'
+          ? 'approved'
+          : normalizedAction === 'reject'
+            ? 'rejected'
+            : null
+
+    if (!decision) {
+      return res.status(400).json({ success: false, message: 'Invalid verification action' })
+    }
+
+    if (decision === 'rejected' && (!reason || !String(reason).trim())) {
+      return res.status(400).json({ success: false, message: 'Rejection reason is required' })
     }
 
     const provider = await Provider.findByIdAndUpdate(
       id,
       {
-        verificationStatus: status,
-        rejectionReason: status === 'rejected' ? reason : '',
-        verifiedAt: status === 'approved' ? new Date() : undefined,
+        verificationStatus: decision,
+        rejectionReason: decision === 'rejected' ? String(reason).trim() : '',
+        verifiedAt: decision === 'approved' ? new Date() : undefined,
       },
       { new: true }
     )
@@ -200,7 +215,7 @@ export const verifyProvider = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: `Provider ${status}`,
+      message: `Provider ${decision}`,
       provider,
     })
   } catch (error) {

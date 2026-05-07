@@ -135,12 +135,19 @@ const seedDatabase = async () => {
       agreedPrice: 0,
     })
 
-    console.log('✅ Database seeded successfully')
+    console.log('Database seeded successfully')
+    console.log('Seed login users:')
+    console.log('- admin@servelink.lk / Admin@1234 (admin)')
+    console.log('- ajith@example.lk / Customer@123 (customer)')
+    console.log('- priya@example.lk / Customer@123 (customer)')
+    console.log('- rohit@example.lk / Provider@123 (provider)')
+    console.log('- lalith@example.lk / Provider@123 (provider)')
     process.exit(0)
   } catch (error) {
-    console.error('❌ Seed error:', error)
+    console.error('Seed error:', error)
     process.exit(1)
   }
 }
 
 seedDatabase()
+
