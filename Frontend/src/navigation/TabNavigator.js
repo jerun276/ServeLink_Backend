@@ -7,11 +7,13 @@ import ChatListScreen from '../screens/chat/ChatListScreen';
 import ChatThreadScreen from '../screens/chat/ChatThreadScreen';
 import HomeScreen from '../screens/home/HomeScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import ProviderDashboardScreen from '../screens/profile/ProviderDashboardScreen';
 import ManageServicesScreen from '../screens/profile/ManageServicesScreen';
 import ServiceDetailsScreen from '../screens/home/ServiceDetailsScreen';
 import CheckoutScreen from '../screens/home/CheckoutScreen';
 import PinScreen from '../screens/home/PinScreen';
 import colors from '../styles/colors';
+import useAuth from '../hooks/useAuth';
 
 const Tab = createBottomTabNavigator();
 const BookingStackNav = createNativeStackNavigator();
@@ -43,14 +45,17 @@ const ChatStack = () => (
   </ChatStackNav.Navigator>
 );
 
-const ProfileStack = () => (
+const ProfileStack = ({ profileRootComponent }) => (
   <ProfileStackNav.Navigator screenOptions={{ headerShown: false }}>
-    <ProfileStackNav.Screen component={ProfileScreen} name="ProfileMain" />
+    <ProfileStackNav.Screen component={profileRootComponent} name="ProfileMain" />
     <ProfileStackNav.Screen component={ManageServicesScreen} name="ManageServices" />
   </ProfileStackNav.Navigator>
 );
 
 const TabNavigator = () => {
+  const { user } = useAuth();
+  const ProfileRootScreen = user?.role === 'provider' ? ProviderDashboardScreen : ProfileScreen;
+
   return (
     <View style={{ flex: 1 }}>
       <Tab.Navigator
@@ -96,7 +101,7 @@ const TabNavigator = () => {
           }}
         />
         <Tab.Screen
-          component={ProfileStack}
+          children={() => <ProfileStack profileRootComponent={ProfileRootScreen} />}
           name="Profile"
           options={{
             tabBarIcon: ({ color, focused }) => (

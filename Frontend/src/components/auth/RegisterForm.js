@@ -10,7 +10,6 @@ const RegisterForm = ({ onSubmit, loading = false, serverError = '' }) => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('customer');
   const [error, setError] = useState('');
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -32,7 +31,7 @@ const RegisterForm = ({ onSubmit, loading = false, serverError = '' }) => {
   }, [fadeAnim, slideAnim]);
 
   const submit = async () => {
-    const values = { name, email, phone, password, role };
+    const values = { name, email, phone, password, role: 'customer' };
     const validation = validateRegister(values);
     if (validation) {
       setError(validation);
@@ -53,16 +52,6 @@ const RegisterForm = ({ onSubmit, loading = false, serverError = '' }) => {
       <Input keyboardType="email-address" label="Email Address" onChangeText={setEmail} placeholder="you@example.com" value={email} />
       <Input keyboardType="phone-pad" label="Phone Number" onChangeText={setPhone} placeholder="e.g. 0771234567" value={phone} />
       <Input label="Password" onChangeText={setPassword} placeholder="Min 8 characters, 1 uppercase, 1 number" secureTextEntry value={password} />
-
-      <Text style={[globalStyles.label, { marginTop: 10 }]}>Register as:</Text>
-      <View style={{ flexDirection: 'row', columnGap: 10, marginBottom: 20 }}>
-        <Button onPress={() => setRole('customer')} style={{ flex: 1 }} variant={role === 'customer' ? 'primary' : 'outline'}>
-          Customer
-        </Button>
-        <Button onPress={() => setRole('provider')} style={{ flex: 1 }} variant={role === 'provider' ? 'primary' : 'outline'}>
-          Provider
-        </Button>
-      </View>
 
       {(error || serverError) ? (
         <View style={{ backgroundColor: '#FFF0F0', padding: 12, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: '#FFE0E0' }}>

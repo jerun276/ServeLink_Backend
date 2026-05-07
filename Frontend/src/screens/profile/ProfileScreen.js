@@ -1,15 +1,22 @@
-import { ScrollView, Text, View, Pressable } from 'react-native';
-import { useMemo, useState } from 'react';
-import Animated, { FadeIn, FadeInDown, FadeInUp, FadeOut } from 'react-native-reanimated';
+import { ScrollView, Text, View, Pressable, TextInput } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import globalStyles from '../../styles/globalStyles';
 import colors from '../../styles/colors';
 import useAuth from '../../hooks/useAuth';
 import { CHAT_THREADS } from '../../utils/constants';
+import Input from '../../components/common/Input';
 
 const ProfileScreen = ({ navigation }) => {
   const { user, logout, updateProfile } = useAuth();
-  const [draft, setDraft] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [location, setLocation] = useState('');
+  const [skillsText, setSkillsText] = useState('');
+  const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const [saveError, setSaveError] = useState('');
 
   const initials = useMemo(() => {
     const name = user?.name || 'User';
@@ -21,11 +28,50 @@ const ProfileScreen = ({ navigation }) => {
       .toUpperCase();
   }, [user]);
 
-  const saveQuickBio = async () => {
+  useEffect(() => {
+    setName(user?.name || '');
+    setPhone(user?.phone || '');
+    setLocation(user?.location || '');
+    setBio(user?.bio || '');
+    setSkillsText(Array.isArray(user?.skills) ? user.skills.join(', ') : '');
+  }, [user]);
+
+  const saveProfile = async () => {
+    const cleanName = name.trim();
+    const cleanPhone = phone.trim();
+
+    if (!cleanName) {
+      setSaveError('Name is required.');
+      setMessage('');
+      return;
+    }
+
+    if (!cleanPhone) {
+      setSaveError('Phone number is required.');
+      setMessage('');
+      return;
+    }
+
+    const skills = skillsText
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+
     setSaving(true);
+    setSaveError('');
+    setMessage('');
+
     try {
-      await updateProfile({ bio: draft });
-      setDraft('');
+      await updateProfile({
+        name: cleanName,
+        phone: cleanPhone,
+        location: location.trim(),
+        bio: bio.trim(),
+        skills,
+      });
+      setMessage('Profile updated successfully.');
+    } catch {
+      setSaveError('Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -66,31 +112,58 @@ const ProfileScreen = ({ navigation }) => {
 
           <Animated.View entering={FadeInUp.delay(250).duration(600)} style={[globalStyles.card, { marginBottom: 20 }]}>
             <Text style={[globalStyles.label, { marginBottom: 8 }]}>Profile Details</Text>
-            <Text style={{ color: colors.subText, marginBottom: 4 }}>Role: {user?.role || 'customer'}</Text>
-            <Text style={{ color: colors.subText, marginBottom: 4 }}>Location: {user?.location || 'Not added yet'}</Text>
-            <Text style={{ color: colors.subText, marginBottom: 4 }}>Skills: {(user?.skills || []).join(', ') || 'Not added yet'}</Text>
-            <Text style={{ color: colors.subText }}>Bio: {user?.bio || 'No bio added yet.'}</Text>
-            <Text style={{ color: colors.subText, marginTop: 8 }}>Draft bio: {draft || '(empty)'}</Text>
+            <Text style={{ color: colors.subText, marginBottom: 10 }}>Role: {user?.role || 'customer'}</Text>
+            <Input label="Name" onChangeText={setName} placeholder="Enter your name" value={name} />
+            <Input keyboardType="phone-pad" label="Phone" onChangeText={setPhone} placeholder="Enter your phone number" value={phone} />
+            <Input label="Location" onChangeText={setLocation} placeholder="Enter your location" value={location} />
+            <Input label="Skills" onChangeText={setSkillsText} placeholder="e.g. Plumbing, Electrical" value={skillsText} />
+            <Text style={globalStyles.label}>Bio</Text>
+            <TextInput
+              multiline
+              numberOfLines={4}
+              onChangeText={setBio}
+              placeholder="Write a short bio"
+              placeholderTextColor="#9b92b3"
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 18,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                color: colors.text,
+                fontSize: 15,
+                minHeight: 100,
+                textAlignVertical: 'top',
+                marginBottom: 14,
+              }}
+              value={bio}
+            />
+
+            {saveError ? (
+              <View style={{ backgroundColor: '#FFF0F0', padding: 12, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#FFE0E0' }}>
+                <Text style={{ color: '#D32F2F', fontSize: 14, fontWeight: '600', textAlign: 'center' }}>{saveError}</Text>
+              </View>
+            ) : null}
+
+            {message ? (
+              <View style={{ backgroundColor: '#ECFDF5', padding: 12, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#A7F3D0' }}>
+                <Text style={{ color: '#047857', fontSize: 14, fontWeight: '600', textAlign: 'center' }}>{message}</Text>
+              </View>
+            ) : null}
+
             <Pressable
-              onPress={saveQuickBio}
+              onPress={saveProfile}
               style={[globalStyles.button, { marginTop: 12, paddingVertical: 12 }]}
             >
               <Text style={{ color: 'white', fontWeight: '700' }}>
-                {saving ? 'Saving...' : 'Save Draft Bio'}
+                {saving ? 'Saving...' : 'Save Profile'}
               </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setDraft('Professional and friendly service provider.')}
-              style={[globalStyles.pill, { marginTop: 8, alignSelf: 'flex-start' }]}
-            >
-              <Text style={globalStyles.pillText}>Use Suggested Bio</Text>
             </Pressable>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(300).duration(600)} style={[globalStyles.card, { padding: 20 }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-                <Text key={d} style={{ color: colors.subText, fontWeight: '600', width: 30, textAlign: 'center' }}>{d}</Text>
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, index) => (
+                <Text key={`${d}-${index}`} style={{ color: colors.subText, fontWeight: '600', width: 30, textAlign: 'center' }}>{d}</Text>
               ))}
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 10 }}>

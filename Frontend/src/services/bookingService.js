@@ -12,9 +12,27 @@ const normalizeBooking = booking => ({
   isReviewed: Boolean(booking.isReviewed),
 });
 
+const normalizeProviderBooking = booking => ({
+  _id: booking._id,
+  serviceTitle: booking.serviceId?.title || 'Service',
+  customerName: booking.customerId?.name || 'Customer',
+  customerEmail: booking.customerId?.email || '',
+  customerPhone: booking.customerId?.phone || '',
+  status: booking.status,
+  scheduledAt: booking.scheduledAt,
+  address: booking.address,
+  amount: booking.agreedPrice ?? 0,
+  notes: booking.notes || '',
+});
+
 export const getMyBookingsRequest = async () => {
   const { data } = await api.get('/bookings/mine');
   return (data.bookings || []).map(normalizeBooking);
+};
+
+export const getProviderBookingsRequest = async () => {
+  const { data } = await api.get('/bookings/provider');
+  return (data.bookings || []).map(normalizeProviderBooking);
 };
 
 export const cancelBookingRequest = async id => {

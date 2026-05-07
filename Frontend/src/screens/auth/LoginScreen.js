@@ -27,8 +27,8 @@ const LoginScreen = ({ navigation }) => {
           <View style={[globalStyles.screen, styles.screenContent]}>
             <Animated.View entering={FadeInDown.delay(100).duration(600)}>
               <Text style={styles.brandName}>ServeLink</Text>
-              <Text style={styles.title}>Welcome back</Text>
-              <Text style={styles.subtitle}>Sign in to continue booking trusted local services.</Text>
+              <Text style={styles.title}>Customer Login</Text>
+              <Text style={styles.subtitle}>Sign in to your customer account and continue booking trusted local services.</Text>
             </Animated.View>
 
             <Animated.View entering={FadeInUp.delay(350).duration(650)} style={styles.formCard}>

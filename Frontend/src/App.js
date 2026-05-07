@@ -1,13 +1,16 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider } from './context/AuthContext';
+import { BookingProvider } from './context/BookingContext';
 import AppNavigator from './navigation/AppNavigator';
 
 const App = () => {
   return (
     <AuthProvider>
-      <NavigationContainer>
-        <AppNavigator />
-      </NavigationContainer>
+      <BookingProvider>
+        <NavigationContainer>
+          <AppNavigator />
+        </NavigationContainer>
+      </BookingProvider>
     </AuthProvider>
   );
 };
