@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "mongose": "^0.0.2-security",
+    "react-native-reanimated": "^4.3.0"
+  }
+}
