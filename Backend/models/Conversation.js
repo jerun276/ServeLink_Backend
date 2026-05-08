@@ -5,8 +5,6 @@ const conversationSchema = new mongoose.Schema(
     bookingId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Booking',
-      required: true,
-      unique: true,
     },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,

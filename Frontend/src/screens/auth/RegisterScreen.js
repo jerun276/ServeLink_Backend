@@ -25,9 +25,9 @@ const RegisterScreen = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           <Animated.View entering={FadeInDown.delay(100).duration(600)}>
-            <Text style={styles.brandName}>Customer Signup</Text>
+            <Text style={styles.brandName}>ServeLink Signup</Text>
             <Text style={styles.title}>Create your account</Text>
-            <Text style={styles.subtitle}>Set up your customer account to compare price, rating, and service options.</Text>
+            <Text style={styles.subtitle}>Join our community as a customer or service provider.</Text>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(350).duration(650)} style={styles.formCard}>

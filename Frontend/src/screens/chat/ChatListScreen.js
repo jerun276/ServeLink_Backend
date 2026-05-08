@@ -28,7 +28,7 @@ const ChatListScreen = ({ navigation }) => {
     <View style={globalStyles.appBackground}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <Text style={[globalStyles.title, { marginBottom: 10 }]}>Chats</Text>
-        <Text style={[globalStyles.subTitle, { marginBottom: 18 }]}>Available only after booking.</Text>
+        <Text style={[globalStyles.subTitle, { marginBottom: 18 }]}>Connect with your providers and customers.</Text>
 
         {loading ? <Text style={{ color: colors.subText }}>Loading conversations...</Text> : null}
 
@@ -52,7 +52,7 @@ const ChatListScreen = ({ navigation }) => {
         {!loading && conversations.length === 0 ? (
           <View style={[globalStyles.card, { borderRadius: 20 }]}>
             <Text style={{ fontWeight: '700', color: colors.text }}>No chats yet</Text>
-            <Text style={{ color: colors.subText, marginTop: 4 }}>Book a service to start messaging the provider.</Text>
+            <Text style={{ color: colors.subText, marginTop: 4 }}>Select a provider from a service to start a conversation.</Text>
           </View>
         ) : null}
       </ScrollView>

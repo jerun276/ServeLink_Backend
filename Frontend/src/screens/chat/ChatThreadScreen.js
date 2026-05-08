@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import {
   getConversationMessagesRequest,
   openBookingConversationRequest,
+  openProviderConversationRequest,
   sendConversationMessageRequest,
 } from '../../services/chatService';
 import useAuth from '../../hooks/useAuth';
@@ -10,7 +11,7 @@ import colors from '../../styles/colors';
 import globalStyles from '../../styles/globalStyles';
 
 const ChatThreadScreen = ({ route, navigation }) => {
-  const { conversationId: initialConversationId, bookingId, title } = route.params || {};
+  const { conversationId: initialConversationId, bookingId, providerId, title } = route.params || {};
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -19,12 +20,22 @@ const ChatThreadScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     const ensureConversation = async () => {
-      if (conversationId || !bookingId) return;
-      const conversation = await openBookingConversationRequest(bookingId);
-      setConversationId(conversation?._id || '');
+      if (conversationId) return;
+      
+      try {
+        if (bookingId && bookingId.length > 5) {
+          const conversation = await openBookingConversationRequest(bookingId);
+          if (conversation?._id) setConversationId(conversation._id);
+        } else if (providerId && providerId.length > 5) {
+          const conversation = await openProviderConversationRequest(providerId);
+          if (conversation?._id) setConversationId(conversation._id);
+        }
+      } catch (err) {
+        console.log('Chat initialization error:', err.response?.data || err.message);
+      }
     };
     ensureConversation();
-  }, [bookingId, conversationId]);
+  }, [bookingId, providerId, conversationId]);
 
   const loadMessages = async () => {
     if (!conversationId) return;
@@ -62,7 +73,7 @@ const ChatThreadScreen = ({ route, navigation }) => {
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 200 }} showsVerticalScrollIndicator={false}>
         {loading ? <Text style={{ color: colors.subText }}>Loading messages...</Text> : null}
         {messages.map(item => {
           const mine = item.senderId?._id === user?.id;
@@ -85,7 +96,7 @@ const ChatThreadScreen = ({ route, navigation }) => {
         })}
       </ScrollView>
 
-      <View style={{ position: 'absolute', bottom: 18, left: 16, right: 16, flexDirection: 'row', gap: 10 }}>
+      <View style={{ position: 'absolute', bottom: 120, left: 16, right: 16, flexDirection: 'row', gap: 10 }}>
         <TextInput
           value={draft}
           onChangeText={setDraft}

@@ -139,3 +139,92 @@ export const getProviderReviewDetail = async (req, res, next) => {
     next(error)
   }
 }
+export const getAllBookings = async (req, res, next) => {
+  try {
+    const bookings = await Booking.find()
+      .populate('customerId', 'name email')
+      .populate('providerId', 'businessName')
+      .populate('serviceId', 'title')
+      .sort({ createdAt: -1 })
+      .limit(100)
+
+    res.json({
+      success: true,
+      bookings,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getAllUsers = async (req, res, next) => {
+  try {
+    const users = await User.find()
+      .select('-passwordHash -refreshTokenHash')
+      .sort({ createdAt: -1 })
+      .limit(100)
+
+    res.json({
+      success: true,
+      users,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const blockUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id)
+    if (!user) throw new AppError('User not found', 404)
+    if (user.role === 'admin') throw new AppError('Cannot block another admin', 403)
+
+    user.isBlocked = true
+    await user.save()
+
+    res.json({ success: true, message: 'User blocked successfully' })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const unblockUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id)
+    if (!user) throw new AppError('User not found', 404)
+
+    user.isBlocked = false
+    await user.save()
+
+    res.json({ success: true, message: 'User unblocked successfully' })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const addAdmin = async (req, res, next) => {
+  try {
+    const { name, email, password, phone } = req.body
+    if (!name || !email || !password || !phone) {
+      throw new AppError('Please provide all details', 400)
+    }
+
+    const existing = await User.findOne({ email: email.toLowerCase().trim() })
+    if (existing) throw new AppError('Email already in use', 400)
+
+    const bcryptjs = (await import('bcryptjs')).default
+    const passwordHash = await bcryptjs.hash(password, 12)
+
+    await User.create({
+      name,
+      email: email.toLowerCase().trim(),
+      passwordHash,
+      phone,
+      role: 'admin',
+    })
+
+    res.status(201).json({ success: true, message: 'New admin created successfully' })
+  } catch (error) {
+    next(error)
+  }
+}

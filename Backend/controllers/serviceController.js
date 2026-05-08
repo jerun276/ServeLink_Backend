@@ -2,11 +2,8 @@ import Service from '../models/Service.js'
 import Provider from '../models/Provider.js'
 import { uploadToCloudinary } from '../utils/uploadMiddleware.js'
 
-const VALID_DISTRICTS = [
-  'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya', 'Galle', 'Matara', 'Hambantota',
-  'Jaffna', 'Kilinochchi', 'Mannar', 'Vavuniya', 'Mullaitivu', 'Batticaloa', 'Ampara', 'Trincomalee',
-  'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa', 'Badulla', 'Monaragala', 'Ratnapura', 'Kegalle',
-]
+import { SRI_LANKAN_DISTRICTS } from '../constants/districts.js'
+import { SERVICE_CATEGORIES } from '../constants/categories.js'
 
 export const createService = async (req, res, next) => {
   try {
@@ -17,8 +14,12 @@ export const createService = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Missing required fields' })
     }
 
-    if (!VALID_DISTRICTS.includes(district)) {
+    if (!SRI_LANKAN_DISTRICTS.includes(district)) {
       return res.status(400).json({ success: false, message: 'Invalid district' })
+    }
+
+    if (!SERVICE_CATEGORIES.includes(category)) {
+      return res.status(400).json({ success: false, message: 'Invalid service category' })
     }
 
     if (pricingType === 'fixed' && !fixedPrice) {
@@ -77,7 +78,7 @@ export const listServices = async (req, res, next) => {
     if (category) {
       query.category = category
     }
-    if (district && VALID_DISTRICTS.includes(district)) {
+    if (district && SRI_LANKAN_DISTRICTS.includes(district)) {
       query.district = district
     }
     if (pricingType && ['fixed', 'quote'].includes(pricingType)) {
@@ -177,7 +178,7 @@ export const updateService = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Not authorized to update this service' })
     }
 
-    if (district && !VALID_DISTRICTS.includes(district)) {
+    if (district && !SRI_LANKAN_DISTRICTS.includes(district)) {
       return res.status(400).json({ success: false, message: 'Invalid district' })
     }
 

@@ -41,7 +41,7 @@ const BookingDetailsScreen = ({ navigation, route }) => {
         </Animated.View>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 160 }} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInUp.delay(200).duration(600)} style={[globalStyles.card, { padding: 0, overflow: 'hidden' }]}>
           <View style={{ height: 180, backgroundColor: '#F0E6FF', alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontSize: 60 }}>🗺️</Text>

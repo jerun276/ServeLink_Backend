@@ -96,7 +96,7 @@ const PinScreen = ({ route, navigation }) => {
         </Animated.View>
       </Animated.View>
 
-      <Animated.View entering={FadeInUp.delay(900).duration(600)} style={{ padding: 20, backgroundColor: 'white', borderTopWidth: 1, borderColor: '#F0F0F0' }}>
+      <Animated.View entering={FadeInUp.delay(900).duration(600)} style={{ padding: 20, backgroundColor: 'white', borderTopWidth: 1, borderColor: '#F0F0F0', marginBottom: 150 }}>
         <Button onPress={onContinue} disabled={pin.length < 4}>Continue</Button>
       </Animated.View>
 

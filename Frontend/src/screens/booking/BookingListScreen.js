@@ -20,7 +20,18 @@ const BookingListScreen = ({ navigation }) => {
   const [rating, setRating] = useState('5');
   const [comment, setComment] = useState('');
 
-  const bookings = useMemo(() => getBookingsByTab(tab), [getBookingsByTab, tab]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+
+  const bookings = useMemo(() => {
+    const list = getBookingsByTab(tab);
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter(b => 
+      b.serviceTitle?.toLowerCase().includes(q) || 
+      b.providerName?.toLowerCase().includes(q)
+    );
+  }, [getBookingsByTab, tab, searchQuery]);
 
   const confirmCancel = async () => {
     try {
@@ -42,7 +53,7 @@ const BookingListScreen = ({ navigation }) => {
 
   return (
     <View style={globalStyles.appBackground}>
-      <View style={[globalStyles.screen, { paddingBottom: 0 }]}>
+      <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
         <Animated.View entering={FadeInDown.duration(600)} style={globalStyles.headerRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
             <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
@@ -51,46 +62,54 @@ const BookingListScreen = ({ navigation }) => {
             <Text style={globalStyles.title}>My Bookings</Text>
           </View>
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <Pressable style={globalStyles.iconButton}>
+            <Pressable onPress={() => setShowSearch(!showSearch)} style={globalStyles.iconButton}>
               <Text style={{ fontSize: 20 }}>🔍</Text>
             </Pressable>
-            <Pressable style={globalStyles.iconButton}>
+            <Pressable onPress={() => navigation.navigate('Chats')} style={globalStyles.iconButton}>
               <Text style={{ fontSize: 20 }}>💬</Text>
             </Pressable>
           </View>
         </Animated.View>
 
+        {showSearch && (
+          <Animated.View entering={FadeIn.duration(300)} exiting={FadeOut.duration(300)} style={{ marginBottom: 15 }}>
+            <TextInput
+              onChangeText={setSearchQuery}
+              placeholder="Search bookings..."
+              placeholderTextColor="#9E9E9E"
+              style={[globalStyles.input, { elevation: 1, height: 50, borderRadius: 12 }]}
+              value={searchQuery}
+            />
+          </Animated.View>
+        )}
+
         <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#F0F0F0', marginBottom: 20 }}>
           {BOOKING_TABS.map((item, index) => (
-            <Animated.View 
-              key={item} 
-              entering={FadeInDown.delay(200 + index * 100).duration(500)}
+            <Pressable
+              key={item}
+              onPress={() => setTab(item)}
+              style={{
+                flex: 1,
+                paddingVertical: 14,
+                borderBottomWidth: tab === item ? 3 : 0,
+                borderBottomColor: colors.primary,
+                alignItems: 'center',
+              }}
             >
-              <Pressable
-                onPress={() => setTab(item)}
-                style={{
-                  flex: 1,
-                  paddingVertical: 14,
-                  borderBottomWidth: tab === item ? 3 : 0,
-                  borderBottomColor: colors.primary,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ 
-                  color: tab === item ? colors.primary : '#9E9E9E', 
-                  textTransform: 'capitalize', 
-                  fontWeight: '700',
-                  fontSize: 16
-                }}>
-                  {item}
-                </Text>
-              </Pressable>
-            </Animated.View>
+              <Text style={{ 
+                color: tab === item ? colors.primary : '#9E9E9E', 
+                textTransform: 'capitalize', 
+                fontWeight: '700',
+                fontSize: 16
+              }}>
+                {item}
+              </Text>
+            </Pressable>
           ))}
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 160 }} showsVerticalScrollIndicator={false}>
         {loading ? <Loader label="Refreshing bookings..." /> : null}
         
         {bookings.length === 0 ? (
@@ -119,7 +138,7 @@ const BookingListScreen = ({ navigation }) => {
         )}
       </ScrollView>
 
-      {/* Modals remain mostly same but could be polished */}
+      {/* Modals */}
       <Modal transparent visible={Boolean(cancelTarget) && !pinModal}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 }}>
           <View style={[globalStyles.card, { padding: 30 }]}>

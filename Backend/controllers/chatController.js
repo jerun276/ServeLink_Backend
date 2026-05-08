@@ -3,43 +3,75 @@ import Conversation from '../models/Conversation.js'
 import Message from '../models/Message.js'
 import Provider from '../models/Provider.js'
 
-const ensureBookingParticipant = async (booking, userId, role) => {
-  if (!booking) return false
-  if (booking.customerId.toString() === userId) return true
+const ensureParticipant = async (conversation, userId, role) => {
+  if (!conversation) return false
+  
+  if (conversation.customerId && conversation.customerId.toString() === userId) return true
+  
   if (role === 'provider') {
     const provider = await Provider.findOne({ userId })
-    return provider ? provider._id.toString() === booking.providerId.toString() : false
+    return provider ? provider._id.toString() === conversation.providerId.toString() : false
   }
+  
   return false
 }
 
 export const createOrGetConversation = async (req, res, next) => {
   try {
-    const { bookingId } = req.body
-    if (!bookingId) {
-      return res.status(400).json({ success: false, message: 'bookingId is required' })
+    const { bookingId, providerId } = req.body
+    
+    if (bookingId && bookingId.length > 5) {
+      const booking = await Booking.findById(bookingId)
+      if (!booking) {
+        return res.status(404).json({ success: false, message: 'Booking not found' })
+      }
+
+      let conversation = await Conversation.findOne({ bookingId })
+      if (!conversation) {
+        conversation = await Conversation.create({
+          bookingId,
+          customerId: booking.customerId,
+          providerId: booking.providerId,
+        })
+      }
+      return res.json({ success: true, conversation })
     }
 
-    const booking = await Booking.findById(bookingId)
-    if (!booking) {
-      return res.status(404).json({ success: false, message: 'Booking not found' })
-    }
+    if (providerId) {
+      if (req.user.role !== 'customer') {
+        return res.status(403).json({ success: false, message: 'Only customers can initiate new chats with providers' })
+      }
 
-    const allowed = await ensureBookingParticipant(booking, req.user.id, req.user.role)
-    if (!allowed) {
-      return res.status(403).json({ success: false, message: 'Not authorized for this booking chat' })
-    }
-
-    let conversation = await Conversation.findOne({ bookingId })
-    if (!conversation) {
-      conversation = await Conversation.create({
-        bookingId,
-        customerId: booking.customerId,
-        providerId: booking.providerId,
+      // If it's a mock ID (starts with usr-), we can't save it to DB as ObjectId
+      // For development, we'll return a "demo" conversation ID or just allow it if we change the model
+      // But let's assume we want real DB records.
+      
+      let conversation = await Conversation.findOne({ 
+        providerId: providerId.length === 24 ? providerId : null, 
+        customerId: req.user.id,
+        bookingId: { $exists: false }
       })
+
+      if (!conversation) {
+        // If providerId is not a valid ObjectId, we use a fallback or return error
+        if (providerId.length !== 24 && !providerId.startsWith('usr-')) {
+           return res.status(400).json({ success: false, message: 'Invalid provider ID' })
+        }
+
+        // For now, let's try to create it. If it fails due to cast, we catch it.
+        try {
+          conversation = await Conversation.create({
+            providerId: providerId.length === 24 ? providerId : undefined, // This will fail if required
+            customerId: req.user.id,
+          })
+        } catch (e) {
+          return res.status(400).json({ success: false, message: 'Pre-booking chat requires a valid provider profile' })
+        }
+      }
+      return res.json({ success: true, conversation })
     }
 
-    res.json({ success: true, conversation })
+    res.status(400).json({ success: false, message: 'Chat system ready: Select a provider or booking to message.' })
   } catch (error) {
     next(error)
   }
@@ -78,13 +110,16 @@ export const listMyConversations = async (req, res, next) => {
 export const listConversationMessages = async (req, res, next) => {
   try {
     const { id } = req.params
+    if (!id || id === 'undefined' || id === 'null') {
+      return res.json({ success: true, messages: [] })
+    }
+
     const conversation = await Conversation.findById(id)
     if (!conversation) {
       return res.status(404).json({ success: false, message: 'Conversation not found' })
     }
 
-    const booking = await Booking.findById(conversation.bookingId)
-    const allowed = await ensureBookingParticipant(booking, req.user.id, req.user.role)
+    const allowed = await ensureParticipant(conversation, req.user.id, req.user.role)
     if (!allowed) {
       return res.status(403).json({ success: false, message: 'Not authorized for this conversation' })
     }
@@ -112,8 +147,7 @@ export const sendMessage = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Conversation not found' })
     }
 
-    const booking = await Booking.findById(conversation.bookingId)
-    const allowed = await ensureBookingParticipant(booking, req.user.id, req.user.role)
+    const allowed = await ensureParticipant(conversation, req.user.id, req.user.role)
     if (!allowed) {
       return res.status(403).json({ success: false, message: 'Not authorized for this conversation' })
     }

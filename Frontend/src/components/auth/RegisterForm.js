@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Text, View } from 'react-native';
+import { Animated, Pressable, Text, View } from 'react-native';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import globalStyles from '../../styles/globalStyles';
@@ -10,6 +10,7 @@ const RegisterForm = ({ onSubmit, loading = false, serverError = '' }) => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('customer');
   const [error, setError] = useState('');
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -31,7 +32,7 @@ const RegisterForm = ({ onSubmit, loading = false, serverError = '' }) => {
   }, [fadeAnim, slideAnim]);
 
   const submit = async () => {
-    const values = { name, email, phone, password, role: 'customer' };
+    const values = { name, email, phone, password, role };
     const validation = validateRegister(values);
     if (validation) {
       setError(validation);
@@ -52,6 +53,38 @@ const RegisterForm = ({ onSubmit, loading = false, serverError = '' }) => {
       <Input keyboardType="email-address" label="Email Address" onChangeText={setEmail} placeholder="you@example.com" value={email} />
       <Input keyboardType="phone-pad" label="Phone Number" onChangeText={setPhone} placeholder="e.g. 0771234567" value={phone} />
       <Input label="Password" onChangeText={setPassword} placeholder="Min 8 characters, 1 uppercase, 1 number" secureTextEntry value={password} />
+
+      <Text style={[globalStyles.label, { marginBottom: 10 }]}>Register as</Text>
+      <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
+        <Pressable
+          onPress={() => setRole('customer')}
+          style={{
+            flex: 1,
+            paddingVertical: 12,
+            borderRadius: 14,
+            borderWidth: 2,
+            borderColor: role === 'customer' ? '#0F766E' : '#E2E8F0',
+            backgroundColor: role === 'customer' ? '#F0F9F9' : '#FFFFFF',
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ fontWeight: '800', color: role === 'customer' ? '#0F766E' : '#64748B' }}>Customer</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setRole('provider')}
+          style={{
+            flex: 1,
+            paddingVertical: 12,
+            borderRadius: 14,
+            borderWidth: 2,
+            borderColor: role === 'provider' ? '#0F766E' : '#E2E8F0',
+            backgroundColor: role === 'provider' ? '#F0F9F9' : '#FFFFFF',
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ fontWeight: '800', color: role === 'provider' ? '#0F766E' : '#64748B' }}>Provider</Text>
+        </Pressable>
+      </View>
 
       {(error || serverError) ? (
         <View style={{ backgroundColor: '#FFF0F0', padding: 12, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: '#FFE0E0' }}>

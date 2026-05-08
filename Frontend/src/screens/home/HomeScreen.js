@@ -88,18 +88,7 @@ const HomeScreen = ({ navigation }) => {
   return (
     <View style={globalStyles.appBackground}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={globalStyles.screen}>
-          <View style={globalStyles.headerRow}>
-            <View>
-              <Text style={styles.welcomeText}>Welcome back</Text>
-              <Text style={styles.customerName}>Anna Grace</Text>
-              <Text style={styles.locationText}>Colombo, Sri Lanka</Text>
-            </View>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarLabel}>AG</Text>
-            </View>
-          </View>
-
+        <View style={[globalStyles.screen, { paddingTop: 40 }]}>
           <Text style={styles.pageTitle}>Find trusted services you can book today</Text>
 
           <View style={styles.searchBox}>
@@ -124,29 +113,7 @@ const HomeScreen = ({ navigation }) => {
             ))}
           </ScrollView>
 
-          <View style={styles.filterPanel}>
-            <FilterGroup
-              activeValue={sortBy}
-              label="Sort"
-              onChange={setSortBy}
-              options={SORT_OPTIONS}
-            />
-            <FilterGroup
-              activeValue={priceFilter}
-              label="Price"
-              onChange={setPriceFilter}
-              options={PRICE_OPTIONS}
-            />
-            <View style={styles.ratingRow}>
-              <Text style={styles.filterLabel}>Minimum rating</Text>
-              <View style={styles.ratingChipsWrap}>
-                <FilterChip label="Any" active={minRating === 0} onPress={() => setMinRating(0)} />
-                <FilterChip label="4.0+" active={minRating === 4} onPress={() => setMinRating(4)} />
-                <FilterChip label="4.5+" active={minRating === 4.5} onPress={() => setMinRating(4.5)} />
-                <FilterChip label="Reset" active={false} onPress={resetFilters} />
-              </View>
-            </View>
-          </View>
+          <View style={{ marginBottom: 20 }} />
 
           <Pressable onPress={() => openService(featuredService)} style={styles.featuredCard}>
             <ImageBackground
@@ -226,7 +193,7 @@ const ServiceCard = ({ service, onPress, providerCount, topProviderRating }) => 
       <View style={styles.purchaseRow}>
         <Text style={styles.priceText}>{formatLkr(service.price)} / day</Text>
         <View style={styles.purchaseButton}>
-          <Text style={styles.purchaseButtonText}>Purchase</Text>
+          <Text style={styles.purchaseButtonText}>Book Now</Text>
         </View>
       </View>
     </View>
@@ -244,7 +211,7 @@ const FilterChip = ({ label, active, onPress }) => (
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 160,
   },
   welcomeText: {
     color: '#5A6578',

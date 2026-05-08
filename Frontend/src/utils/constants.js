@@ -85,7 +85,7 @@ export const SERVICES_CATALOG = [
 export const SERVICE_PROVIDERS = {
   'svc-1': [
     {
-      id: 'usr-paint-1',
+      id: '663a8e9e4f2a5b1c8d9e0001',
       name: 'Kasun Perera',
       photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
       headline: 'Wall finishing specialist',
@@ -105,7 +105,7 @@ export const SERVICE_PROVIDERS = {
       ],
     },
     {
-      id: 'usr-paint-2',
+      id: '663a8e9e4f2a5b1c8d9e0002',
       name: 'ColorFix Team',
       photo: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=400&q=80',
       headline: 'Fast team for full-house paint jobs',
@@ -125,7 +125,7 @@ export const SERVICE_PROVIDERS = {
       ],
     },
     {
-      id: 'usr-paint-3',
+      id: '663a8e9e4f2a5b1c8d9e0003',
       name: 'Prime Coat Agency',
       photo: 'https://images.unsplash.com/photo-1546961329-78bef0414d7c?auto=format&fit=crop&w=400&q=80',
       headline: 'Premium paint and finish agency',
@@ -287,7 +287,7 @@ export const SERVICE_PROVIDERS = {
       ],
     },
     {
-      id: 'usr-shift-2',
+      id: '663a8e9e4f2a5b1c8d9e0011',
       name: 'Rapid Movers Lanka',
       photo: 'https://images.unsplash.com/photo-1595152772835-219674b2a8a6?auto=format&fit=crop&w=400&q=80',
       headline: 'Full-service relocation agency',

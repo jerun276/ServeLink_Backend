@@ -4,7 +4,6 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import globalStyles from '../../styles/globalStyles';
 import colors from '../../styles/colors';
 import useAuth from '../../hooks/useAuth';
-import { CHAT_THREADS } from '../../utils/constants';
 import Input from '../../components/common/Input';
 
 const ProfileScreen = ({ navigation }) => {
@@ -79,11 +78,11 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <View style={globalStyles.appBackground}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View style={globalStyles.screen}>
           <Animated.View entering={FadeInDown.duration(600)} style={globalStyles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-              <View style={{ 
+            <View style={{ 
                 width: 60, 
                 height: 60, 
                 borderRadius: 30, 
@@ -94,8 +93,8 @@ const ProfileScreen = ({ navigation }) => {
                 <Text style={{ color: 'white', fontWeight: '800', fontSize: 20 }}>{initials}</Text>
               </View>
               <View>
-                <Text style={[globalStyles.title, { fontSize: 22 }]}>{user?.name || 'Andrew Ainsley'}</Text>
-                <Text style={globalStyles.subTitle}>{user?.email || 'andrew_ainsley@yourdomain.com'}</Text>
+                <Text style={[globalStyles.title, { fontSize: 22 }]}>{user?.name || 'User'}</Text>
+                <Text style={globalStyles.subTitle}>{user?.email || 'user@example.com'}</Text>
               </View>
             </View>
             <Pressable onPress={logout} style={globalStyles.iconButton}>
@@ -103,41 +102,14 @@ const ProfileScreen = ({ navigation }) => {
             </Pressable>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(200).duration(600)} style={[globalStyles.headerRow, { marginTop: 24, marginBottom: 12 }]}>
-            <Text style={[globalStyles.title, { fontSize: 20 }]}>My Calendar</Text>
-            <Pressable>
-              <Text style={{ color: colors.primary, fontWeight: '700' }}>December 2026 ▾</Text>
-            </Pressable>
-          </Animated.View>
-
-          <Animated.View entering={FadeInUp.delay(250).duration(600)} style={[globalStyles.card, { marginBottom: 20 }]}>
-            <Text style={[globalStyles.label, { marginBottom: 8 }]}>Profile Details</Text>
-            <Text style={{ color: colors.subText, marginBottom: 10 }}>Role: {user?.role || 'customer'}</Text>
+          <Animated.View entering={FadeInUp.delay(250).duration(600)} style={[globalStyles.card, { marginTop: 24, marginBottom: 20 }]}>
+            <Text style={[globalStyles.label, { marginBottom: 8 }]}>Update Profile</Text>
+            <Text style={{ color: colors.subText, marginBottom: 15 }}>Manage your personal information below.</Text>
+            
             <Input label="Name" onChangeText={setName} placeholder="Enter your name" value={name} />
             <Input keyboardType="phone-pad" label="Phone" onChangeText={setPhone} placeholder="Enter your phone number" value={phone} />
             <Input label="Location" onChangeText={setLocation} placeholder="Enter your location" value={location} />
-            <Input label="Skills" onChangeText={setSkillsText} placeholder="e.g. Plumbing, Electrical" value={skillsText} />
-            <Text style={globalStyles.label}>Bio</Text>
-            <TextInput
-              multiline
-              numberOfLines={4}
-              onChangeText={setBio}
-              placeholder="Write a short bio"
-              placeholderTextColor="#9b92b3"
-              style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: 18,
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                color: colors.text,
-                fontSize: 15,
-                minHeight: 100,
-                textAlignVertical: 'top',
-                marginBottom: 14,
-              }}
-              value={bio}
-            />
-
+            
             {saveError ? (
               <View style={{ backgroundColor: '#FFF0F0', padding: 12, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#FFE0E0' }}>
                 <Text style={{ color: '#D32F2F', fontSize: 14, fontWeight: '600', textAlign: 'center' }}>{saveError}</Text>
@@ -152,88 +124,91 @@ const ProfileScreen = ({ navigation }) => {
 
             <Pressable
               onPress={saveProfile}
-              style={[globalStyles.button, { marginTop: 12, paddingVertical: 12 }]}
+              style={[globalStyles.button, { marginTop: 12, paddingVertical: 14 }]}
             >
-              <Text style={{ color: 'white', fontWeight: '700' }}>
-                {saving ? 'Saving...' : 'Save Profile'}
+              <Text style={{ color: 'white', fontWeight: '800', fontSize: 16 }}>
+                {saving ? 'Saving...' : 'Update Account'}
               </Text>
             </Pressable>
           </Animated.View>
 
-          <Animated.View entering={FadeInUp.delay(300).duration(600)} style={[globalStyles.card, { padding: 20 }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, index) => (
-                <Text key={`${d}-${index}`} style={{ color: colors.subText, fontWeight: '600', width: 30, textAlign: 'center' }}>{d}</Text>
-              ))}
-            </View>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 10 }}>
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((day, index) => (
-                <Animated.View 
-                  key={day} 
-                  entering={FadeInDown.delay(400 + index * 20).duration(300)}
-                >
-                  <Pressable 
-                    style={{ 
-                      width: 35, 
-                      height: 35, 
-                      borderRadius: 10, 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      backgroundColor: day === 21 ? colors.primary : 'transparent'
-                    }}
-                  >
-                    <Text style={{ 
-                      color: day === 21 ? 'white' : colors.text,
-                      fontWeight: day === 21 ? '700' : '500'
-                    }}>{day}</Text>
-                  </Pressable>
-                </Animated.View>
-              ))}
-            </View>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(500).duration(600)} style={[globalStyles.headerRow, { marginTop: 24, marginBottom: 12 }]}>
-            <Text style={[globalStyles.title, { fontSize: 20 }]}>Inbox</Text>
-            <View style={{ flexDirection: 'row', gap: 15 }}>
-              <Text style={{ color: colors.primary, fontWeight: '700' }}>Chats</Text>
-              <Text style={{ color: colors.subText, fontWeight: '700' }}>Calls</Text>
-            </View>
-          </Animated.View>
-
-          {CHAT_THREADS.map((thread, index) => (
-            <Animated.View 
-              key={thread.id} 
-              entering={FadeInUp.delay(600 + index * 100).duration(500)}
+          <Animated.View entering={FadeInUp.delay(400).duration(600)} style={[globalStyles.card, { marginTop: 0 }]}>
+            <Text style={[globalStyles.label, { marginBottom: 15 }]}>Account Settings</Text>
+            
+            <Pressable 
+              onPress={() => navigation.navigate('Bookings')}
+              style={styles.settingItem}
             >
-              <Pressable style={[globalStyles.card, { padding: 16, marginBottom: 12 }]}>
-                <View style={{ flexDirection: 'row', gap: 16 }}>
-                  <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#F0F0F0', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 24 }}>👤</Text>
-                  </View>
-                  <View style={{ flex: 1, justifyContent: 'center' }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>{thread.name}</Text>
-                      <Text style={{ fontSize: 12, color: colors.subText }}>{thread.time}</Text>
-                    </View>
-                    <Text numberOfLines={1} style={{ color: colors.subText, fontSize: 14 }}>{thread.lastMessage}</Text>
-                  </View>
-                </View>
-              </Pressable>
-            </Animated.View>
-          ))}
-
-          {user?.role === 'provider' ? (
-            <Pressable
-              onPress={() => navigation.navigate('ManageServices')}
-              style={[globalStyles.button, { marginTop: 10 }]}
-            >
-              <Text style={{ color: 'white', fontWeight: '700' }}>Manage My Services</Text>
+              <View style={styles.settingIconWrap}>
+                <Text style={{ fontSize: 18 }}>📅</Text>
+              </View>
+              <Text style={styles.settingText}>My Bookings</Text>
+              <Text style={styles.settingArrow}>›</Text>
             </Pressable>
-          ) : null}
+
+            <View style={styles.settingDivider} />
+
+            <Pressable 
+              onPress={() => navigation.navigate('Chats')}
+              style={styles.settingItem}
+            >
+              <View style={[styles.settingIconWrap, { backgroundColor: '#E0F2FE' }]}>
+                <Text style={{ fontSize: 18 }}>💬</Text>
+              </View>
+              <Text style={styles.settingText}>My Chats</Text>
+              <Text style={styles.settingArrow}>›</Text>
+            </Pressable>
+
+            <View style={styles.settingDivider} />
+
+            <Pressable 
+              onPress={logout}
+              style={styles.settingItem}
+            >
+              <View style={[styles.settingIconWrap, { backgroundColor: '#FFEBEB' }]}>
+                <Text style={{ fontSize: 18 }}>🚪</Text>
+              </View>
+              <Text style={[styles.settingText, { color: '#F75555' }]}>Logout</Text>
+              <Text style={styles.settingArrow}>›</Text>
+            </Pressable>
+          </Animated.View>
         </View>
       </ScrollView>
     </View>
   );
+};
+
+const styles = {
+  settingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  settingIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#F0E6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 15,
+  },
+  settingText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  settingArrow: {
+    fontSize: 22,
+    color: '#CBD5E1',
+    fontWeight: '400',
+  },
+  settingDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 4,
+  }
 };
 
 export default ProfileScreen;

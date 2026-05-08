@@ -486,10 +486,84 @@ const ProviderDashboardScreen = ({ navigation }) => {
               })}
             </View>
           </Animated.View>
+
+          <Animated.View entering={FadeInUp.delay(450).duration(500)} style={[globalStyles.card, { borderRadius: 20 }]}>
+            <Text style={[globalStyles.label, { marginBottom: 15 }]}>Account Settings</Text>
+            
+            <Pressable 
+              onPress={() => navigation.navigate('Bookings')}
+              style={styles.settingItem}
+            >
+              <View style={styles.settingIconWrap}>
+                <Text style={{ fontSize: 18 }}>📅</Text>
+              </View>
+              <Text style={styles.settingText}>Manage My Jobs</Text>
+              <Text style={styles.settingArrow}>›</Text>
+            </Pressable>
+
+            <View style={styles.settingDivider} />
+
+            <Pressable 
+              onPress={() => navigation.navigate('Chats')}
+              style={styles.settingItem}
+            >
+              <View style={[styles.settingIconWrap, { backgroundColor: '#E0F2FE' }]}>
+                <Text style={{ fontSize: 18 }}>💬</Text>
+              </View>
+              <Text style={styles.settingText}>Customer Chats</Text>
+              <Text style={styles.settingArrow}>›</Text>
+            </Pressable>
+
+            <View style={styles.settingDivider} />
+
+            <Pressable 
+              onPress={logout}
+              style={styles.settingItem}
+            >
+              <View style={[styles.settingIconWrap, { backgroundColor: '#FFEBEB' }]}>
+                <Text style={{ fontSize: 18 }}>🚪</Text>
+              </View>
+              <Text style={[styles.settingText, { color: '#F75555' }]}>Logout</Text>
+              <Text style={styles.settingArrow}>›</Text>
+            </Pressable>
+          </Animated.View>
         </View>
       </ScrollView>
     </View>
   );
+};
+
+const styles = {
+  settingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  settingIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#F0E6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 15,
+  },
+  settingText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  settingArrow: {
+    fontSize: 22,
+    color: '#CBD5E1',
+    fontWeight: '400',
+  },
+  settingDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 4,
+  }
 };
 
 export default ProviderDashboardScreen;

@@ -39,9 +39,13 @@ export const protect = async (req, res, next) => {
       throw new AppError('Invalid access token payload', 401)
     }
 
-    const user = await User.findById(decoded.id).select('id role email')
+    const user = await User.findById(decoded.id).select('id role email isBlocked')
     if (!user) {
       throw new AppError('User not found for this token', 401)
+    }
+
+    if (user.isBlocked) {
+      throw new AppError('Your account has been blocked by the admin', 403)
     }
 
     req.user = {

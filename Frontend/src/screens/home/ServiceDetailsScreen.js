@@ -5,6 +5,7 @@ import colors from '../../styles/colors';
 import useAuth from '../../hooks/useAuth';
 import { SERVICE_PROVIDERS } from '../../utils/constants';
 import { formatLkr } from '../../utils/currency';
+import { getConversationsRequest, openProviderConversationRequest } from '../../services/chatService';
 
 const RATING_FILTERS = [0, 4, 4.5];
 
@@ -108,8 +109,21 @@ const ServiceDetailsScreen = ({ route, navigation }) => {
   };
 
   const onContactProvider = async (provider, mode) => {
-    if (user?.role !== 'customer') {
-      Alert.alert('Customers only', 'Only customers can directly contact providers.');
+
+    if (mode === 'sms') {
+      try {
+        const conversation = await openProviderConversationRequest(provider.id);
+        
+        if (conversation) {
+          const displayName = provider.name || 'Provider';
+          navigation.navigate('Chats', { 
+            screen: 'ChatThread', 
+            params: { conversationId: conversation._id, title: displayName } 
+          });
+        }
+      } catch (err) {
+        Alert.alert('Chat Error', err.response?.data?.message || 'Unable to start chat at this time.');
+      }
       return;
     }
 
@@ -207,15 +221,24 @@ const ServiceDetailsScreen = ({ route, navigation }) => {
                 <View style={styles.contactRow}>
                   <Pressable
                     onPress={() => onContactProvider(provider, 'call')}
-                    style={[styles.contactButton, user?.role !== 'customer' && styles.contactDisabled]}
+                    style={styles.contactButton}
                   >
                     <Text style={styles.contactButtonText}>Call</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => onContactProvider(provider, 'sms')}
-                    style={[styles.contactButton, user?.role !== 'customer' && styles.contactDisabled]}
+                    style={styles.contactButton}
                   >
                     <Text style={styles.contactButtonText}>Message</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      setSelectedProviderId(provider.id);
+                      onContinue();
+                    }}
+                    style={[styles.contactButton, { backgroundColor: colors.primary }]}
+                  >
+                    <Text style={styles.contactButtonText}>Book Now</Text>
                   </Pressable>
                 </View>
 
@@ -262,9 +285,7 @@ const ServiceDetailsScreen = ({ route, navigation }) => {
             </View>
           ))}
 
-          {user?.role !== 'customer' ? (
-            <Text style={styles.helperText}>Contact actions are visible for all, but only customers can use call/message.</Text>
-          ) : null}
+          <View style={{ marginBottom: 30 }} />
         </View>
       </ScrollView>
 
@@ -565,7 +586,7 @@ const styles = StyleSheet.create({
   },
   bottomBar: {
     position: 'absolute',
-    bottom: 16,
+    bottom: 150,
     left: 14,
     right: 14,
     borderRadius: 20,

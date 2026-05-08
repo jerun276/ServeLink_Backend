@@ -5,21 +5,27 @@ import colors from '../../styles/colors';
 import useAuth from '../../hooks/useAuth';
 import { getAdminDashboardRequest } from '../../services/adminService';
 
-const StatCard = ({ label, value }) => (
-  <View
-    style={{
-      width: '48%',
-      backgroundColor: '#FFFFFF',
-      borderWidth: 1,
-      borderColor: '#E2E8F0',
-      borderRadius: 14,
-      padding: 12,
-      marginBottom: 10,
-    }}
+const StatCard = ({ label, value, onPress }) => (
+  <Pressable
+    onPress={onPress}
+    style={({ pressed }) => [
+      {
+        width: '48%',
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 14,
+        padding: 12,
+        marginBottom: 10,
+        opacity: pressed ? 0.7 : 1,
+        transform: [{ scale: pressed ? 0.98 : 1 }]
+      }
+    ]}
   >
     <Text style={{ color: colors.subText, fontWeight: '600', fontSize: 12 }}>{label}</Text>
     <Text style={{ color: colors.text, fontWeight: '800', fontSize: 24, marginTop: 4 }}>{value}</Text>
-  </View>
+    {onPress && <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '700', marginTop: 4 }}>View Details ›</Text>}
+  </Pressable>
 );
 
 const AdminDashboardScreen = ({ navigation }) => {
@@ -73,49 +79,81 @@ const AdminDashboardScreen = ({ navigation }) => {
             {error ? <Text style={{ color: colors.danger, marginBottom: 12 }}>{error}</Text> : null}
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-              <StatCard label="Users" value={stats?.users?.total || 0} />
-              <StatCard label="Customers" value={stats?.users?.customers || 0} />
-              <StatCard label="Provider Users" value={stats?.users?.providerUsers || 0} />
-              <StatCard label="Admins" value={stats?.users?.admins || 0} />
+              <StatCard label="Users" value={stats?.users?.total || 0} onPress={() => navigation.navigate('AdminAllUsers')} />
+              <StatCard label="Customers" value={stats?.users?.customers || 0} onPress={() => navigation.navigate('AdminAllUsers')} />
+              <StatCard label="Provider Users" value={stats?.users?.providerUsers || 0} onPress={() => navigation.navigate('AdminAllUsers')} />
+              <StatCard label="Admins" value={stats?.users?.admins || 0} onPress={() => navigation.navigate('AdminAllUsers')} />
               <StatCard label="Provider Profiles" value={stats?.providers?.profilesTotal || 0} />
-              <StatCard label="Pending Providers" value={stats?.providers?.pending || 0} />
-              <StatCard label="Total Bookings" value={stats?.bookings?.total || 0} />
+              <StatCard label="Pending Providers" value={stats?.providers?.pending || 0} onPress={() => navigation.navigate('AdminPendingProviders')} />
+              <StatCard label="Total Bookings" value={stats?.bookings?.total || 0} onPress={() => navigation.navigate('AdminAllBookings')} />
               <StatCard label="Completion Rate" value={`${stats?.bookings?.completionRate || 0}%`} />
             </View>
           </View>
-
+          
           <View style={[globalStyles.card, { borderRadius: 20 }]}>
-            <Text style={[globalStyles.label, { marginBottom: 8 }]}>Pending Provider Reviews</Text>
-            {pendingProviders.length === 0 ? (
-              <Text style={{ color: colors.subText }}>No pending providers right now.</Text>
-            ) : (
-              pendingProviders.map(provider => (
-                <Pressable
-                  key={provider._id}
-                  onPress={() => navigation.navigate('ProviderReview', { providerId: provider._id })}
-                  style={{
-                    borderWidth: 1,
-                    borderColor: '#E6ECF3',
-                    borderRadius: 12,
-                    padding: 12,
-                    marginBottom: 8,
-                  }}
-                >
-                  <Text style={{ color: colors.text, fontWeight: '800' }}>
-                    {provider.businessName || provider.userId?.name || 'Provider'}
-                  </Text>
-                  <Text style={{ color: colors.subText, marginTop: 2 }}>
-                    {provider.userId?.email || 'No email'} | {provider.district || 'No district'}
-                  </Text>
-                  <Text style={{ color: colors.primary, fontWeight: '700', marginTop: 6 }}>Open review</Text>
-                </Pressable>
-              ))
-            )}
+            <Text style={[globalStyles.label, { marginBottom: 15 }]}>Account Settings</Text>
+            
+            <Pressable 
+              onPress={() => navigation.navigate('AdminAddAdmin')}
+              style={styles.settingItem}
+            >
+              <View style={[styles.settingIconWrap, { backgroundColor: '#F0FDF4' }]}>
+                <Text style={{ fontSize: 18 }}>➕</Text>
+              </View>
+              <Text style={styles.settingText}>Add New Admin</Text>
+              <Text style={styles.settingArrow}>›</Text>
+            </Pressable>
+
+            <View style={styles.settingDivider} />
+
+            <Pressable 
+              onPress={logout}
+              style={styles.settingItem}
+            >
+              <View style={[styles.settingIconWrap, { backgroundColor: '#FFEBEB' }]}>
+                <Text style={{ fontSize: 18 }}>🚪</Text>
+              </View>
+              <Text style={[styles.settingText, { color: '#F75555' }]}>Logout from Admin</Text>
+              <Text style={styles.settingArrow}>›</Text>
+            </Pressable>
           </View>
         </View>
       </ScrollView>
     </View>
   );
+};
+
+const styles = {
+  settingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  settingIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#F0E6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 15,
+  },
+  settingText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  settingArrow: {
+    fontSize: 22,
+    color: '#CBD5E1',
+    fontWeight: '400',
+  },
+  settingDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 4,
+  }
 };
 
 export default AdminDashboardScreen;

@@ -2,11 +2,7 @@ import Booking from '../models/Booking.js'
 import Service from '../models/Service.js'
 import Provider from '../models/Provider.js'
 
-const VALID_DISTRICTS = [
-  'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya', 'Galle', 'Matara', 'Hambantota',
-  'Jaffna', 'Kilinochchi', 'Mannar', 'Vavuniya', 'Mullaitivu', 'Batticaloa', 'Ampara', 'Trincomalee',
-  'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa', 'Badulla', 'Monaragala', 'Ratnapura', 'Kegalle',
-]
+import { SRI_LANKAN_DISTRICTS } from '../constants/districts.js'
 
 export const createBooking = async (req, res, next) => {
   try {
@@ -17,7 +13,7 @@ export const createBooking = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Missing required fields' })
     }
 
-    if (!VALID_DISTRICTS.includes(district)) {
+    if (!SRI_LANKAN_DISTRICTS.includes(district)) {
       return res.status(400).json({ success: false, message: 'Invalid district' })
     }
 
@@ -40,7 +36,7 @@ export const createBooking = async (req, res, next) => {
       district,
       notes: notes || '',
       agreedPrice: service.pricingType === 'fixed' ? service.fixedPrice : 0,
-      status: 'pending',
+      status: service.pricingType === 'fixed' ? 'accepted' : 'pending',
     })
 
     await Service.findByIdAndUpdate(serviceId, { $inc: { totalBookings: 1 } })

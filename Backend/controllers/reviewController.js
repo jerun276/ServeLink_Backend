@@ -54,6 +54,12 @@ export const submitReview = async (req, res, next) => {
       if (booking.customerId.toString() !== customerId) {
         return res.status(403).json({ success: false, message: 'Not authorized to review this booking' })
       }
+      if (booking.status !== 'completed') {
+        return res.status(400).json({ success: false, message: 'Can only review completed bookings' })
+      }
+      if (booking.isReviewed) {
+        return res.status(400).json({ success: false, message: 'This booking has already been reviewed' })
+      }
       if (!serviceId) serviceId = booking.serviceId
     }
 

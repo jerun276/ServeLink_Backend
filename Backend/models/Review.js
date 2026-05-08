@@ -39,6 +39,7 @@ const reviewSchema = new mongoose.Schema(
   }
 )
 
+reviewSchema.index({ bookingId: 1 }, { unique: true, sparse: true })
 reviewSchema.index({ customerId: 1, serviceId: 1 }, { unique: true })
 
 export default mongoose.model('Review', reviewSchema)

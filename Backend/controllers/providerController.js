@@ -3,12 +3,8 @@ import User from '../models/User.js'
 import Service from '../models/Service.js'
 import Review from '../models/Review.js'
 import { uploadToCloudinary } from '../utils/uploadMiddleware.js'
-
-const VALID_DISTRICTS = [
-  'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya', 'Galle', 'Matara', 'Hambantota',
-  'Jaffna', 'Kilinochchi', 'Mannar', 'Vavuniya', 'Mullaitivu', 'Batticaloa', 'Ampara', 'Trincomalee',
-  'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa', 'Badulla', 'Monaragala', 'Ratnapura', 'Kegalle',
-]
+import { SRI_LANKAN_DISTRICTS } from '../constants/districts.js'
+import { SERVICE_CATEGORIES } from '../constants/categories.js'
 
 export const createProvider = async (req, res, next) => {
   try {
@@ -19,8 +15,15 @@ export const createProvider = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Missing required fields' })
     }
 
-    if (!VALID_DISTRICTS.includes(district)) {
+    if (!SRI_LANKAN_DISTRICTS.includes(district)) {
       return res.status(400).json({ success: false, message: 'Invalid district' })
+    }
+
+    if (serviceCategories && Array.isArray(serviceCategories)) {
+      const invalid = serviceCategories.filter(cat => !SERVICE_CATEGORIES.includes(cat))
+      if (invalid.length > 0) {
+        return res.status(400).json({ success: false, message: `Invalid categories: ${invalid.join(', ')}` })
+      }
     }
 
     const existingProvider = await Provider.findOne({ userId })
@@ -62,7 +65,7 @@ export const listApprovedProviders = async (req, res, next) => {
     const { district, category } = req.query
     const query = { verificationStatus: 'approved' }
 
-    if (district && VALID_DISTRICTS.includes(district)) {
+    if (district && SRI_LANKAN_DISTRICTS.includes(district)) {
       query.district = district
     }
     if (category) {
@@ -148,7 +151,7 @@ export const updateProvider = async (req, res, next) => {
 
     const { businessName, serviceCategories, district, bio } = req.body
 
-    if (district && !VALID_DISTRICTS.includes(district)) {
+    if (district && !SRI_LANKAN_DISTRICTS.includes(district)) {
       return res.status(400).json({ success: false, message: 'Invalid district' })
     }
 

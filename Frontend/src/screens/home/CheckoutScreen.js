@@ -113,7 +113,7 @@ const CheckoutScreen = ({ route, navigation }) => {
         </Animated.View>
       </ScrollView>
 
-      <Animated.View entering={FadeInUp.delay(800).duration(600)} style={{ padding: 20, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: '#F0F0F0' }}>
+      <Animated.View entering={FadeInUp.delay(800).duration(600)} style={{ padding: 20, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: '#F0F0F0', marginBottom: 150 }}>
         <Button onPress={onConfirm}>Confirm Payment</Button>
       </Animated.View>
     </View>

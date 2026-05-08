@@ -24,3 +24,28 @@ export const deleteReviewAsAdminRequest = async reviewId => {
   const { data } = await api.delete(`/reviews/${reviewId}`);
   return data;
 };
+
+export const getAllBookingsRequest = async () => {
+  const { data } = await api.get('/admin/bookings');
+  return data.bookings || [];
+};
+
+export const getAllUsersRequest = async () => {
+  const { data } = await api.get('/admin/users');
+  return data.users || [];
+};
+
+export const blockUserRequest = async userId => {
+  const { data } = await api.post(`/admin/users/${userId}/block`);
+  return data;
+};
+
+export const unblockUserRequest = async userId => {
+  const { data } = await api.post(`/admin/users/${userId}/unblock`);
+  return data;
+};
+
+export const addAdminRequest = async payload => {
+  const { data } = await api.post('/admin/add-admin', payload);
+  return data;
+};

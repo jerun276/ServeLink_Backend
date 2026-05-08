@@ -5,6 +5,11 @@ export const openBookingConversationRequest = async bookingId => {
   return data.conversation;
 };
 
+export const openProviderConversationRequest = async providerId => {
+  const { data } = await api.post('/chats/conversations', { providerId });
+  return data.conversation;
+};
+
 export const getConversationsRequest = async () => {
   const { data } = await api.get('/chats/conversations');
   return data.conversations || [];

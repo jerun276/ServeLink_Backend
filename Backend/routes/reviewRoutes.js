@@ -12,6 +12,6 @@ const router = express.Router()
 router.post('/', protect, requireRole('customer'), submitReview)
 router.get('/provider/:id', getProviderReviews)
 router.get('/service/:id', getServiceReviews)
-router.delete('/:id', protect, requireRole('admin'), deleteReview)
+router.delete('/:id', protect, deleteReview)
 
 export default router

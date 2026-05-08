@@ -11,6 +11,10 @@ import ProviderDashboardScreen from '../screens/profile/ProviderDashboardScreen'
 import ManageServicesScreen from '../screens/profile/ManageServicesScreen';
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import ProviderReviewScreen from '../screens/admin/ProviderReviewScreen';
+import AdminAllBookingsScreen from '../screens/admin/AdminAllBookingsScreen';
+import AdminAllUsersScreen from '../screens/admin/AdminAllUsersScreen';
+import AdminPendingProvidersScreen from '../screens/admin/AdminPendingProvidersScreen';
+import AdminAddAdminScreen from '../screens/admin/AdminAddAdminScreen';
 import ServiceDetailsScreen from '../screens/home/ServiceDetailsScreen';
 import CheckoutScreen from '../screens/home/CheckoutScreen';
 import PinScreen from '../screens/home/PinScreen';
@@ -54,7 +58,13 @@ const ProfileStack = ({ profileRootComponent, role }) => (
       <ProfileStackNav.Screen component={ManageServicesScreen} name="ManageServices" />
     ) : null}
     {role === 'admin' ? (
-      <ProfileStackNav.Screen component={ProviderReviewScreen} name="ProviderReview" />
+      <>
+        <ProfileStackNav.Screen component={ProviderReviewScreen} name="ProviderReview" />
+        <ProfileStackNav.Screen component={AdminAllBookingsScreen} name="AdminAllBookings" />
+        <ProfileStackNav.Screen component={AdminAllUsersScreen} name="AdminAllUsers" />
+        <ProfileStackNav.Screen component={AdminPendingProvidersScreen} name="AdminPendingProviders" />
+        <ProfileStackNav.Screen component={AdminAddAdminScreen} name="AdminAddAdmin" />
+      </>
     ) : null}
   </ProfileStackNav.Navigator>
 );
@@ -87,28 +97,32 @@ const TabNavigator = () => {
             ),
           }}
         />
-        <Tab.Screen
-          component={BookingStack}
-          name="Bookings"
-          options={{
-            tabBarIcon: ({ color, focused }) => (
-              <View style={[styles.iconContainer, focused && styles.activeIcon]}>
-                <Text style={{ color: focused ? 'white' : '#9E9E9E', fontSize: 22 }}>📅</Text>
-              </View>
-            ),
-          }}
-        />
-        <Tab.Screen
-          component={ChatStack}
-          name="Chats"
-          options={{
-            tabBarIcon: ({ color, focused }) => (
-              <View style={[styles.iconContainer, focused && styles.activeIcon]}>
-                <Text style={{ color: focused ? 'white' : '#9E9E9E', fontSize: 22 }}>👥</Text>
-              </View>
-            ),
-          }}
-        />
+        {user?.role !== 'admin' && (
+          <Tab.Screen
+            component={BookingStack}
+            name="Bookings"
+            options={{
+              tabBarIcon: ({ color, focused }) => (
+                <View style={[styles.iconContainer, focused && styles.activeIcon]}>
+                  <Text style={{ color: focused ? 'white' : '#9E9E9E', fontSize: 22 }}>📅</Text>
+                </View>
+              ),
+            }}
+          />
+        )}
+        {user?.role !== 'admin' && (
+          <Tab.Screen
+            component={ChatStack}
+            name="Chats"
+            options={{
+              tabBarIcon: ({ color, focused }) => (
+                <View style={[styles.iconContainer, focused && styles.activeIcon]}>
+                  <Text style={{ color: focused ? 'white' : '#9E9E9E', fontSize: 22 }}>👥</Text>
+                </View>
+              ),
+            }}
+          />
+        )}
         <Tab.Screen
           children={() => <ProfileStack profileRootComponent={ProfileRootScreen} role={user?.role} />}
           name="Profile"
